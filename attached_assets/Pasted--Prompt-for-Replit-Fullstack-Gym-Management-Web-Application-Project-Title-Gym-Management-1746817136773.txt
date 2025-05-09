@@ -1,0 +1,168 @@
+**Prompt for Replit: Fullstack Gym Management Web Application**
+
+**Project Title:** Gym Management System Web App
+
+**Objective:** Build a modern, fully responsive, fullstack web application for gym owners to manage their gym and members effectively.
+
+---
+
+### **Authentication & Gym Registration**
+
+1. **Gym Registration**
+
+   * Fields:
+
+     * Email
+     * Gym Name
+     * Username
+     * Password
+     * Gym Photo (for dashboard branding)
+   * Store registration details in the backend securely.
+
+2. **Login**
+
+   * Fields:
+
+     * Username
+     * Password
+   * Login should authenticate gym owners.
+
+3. **Forgot Password Flow**
+
+   * Input registered email
+   * Send OTP to email
+   * Enter OTP to validate
+   * Reset password upon successful OTP verification
+   * Display toast notifications for:
+
+     * Invalid OTP
+     * Valid OTP
+     * Successful/Failed login
+     * Logout
+     * New gym registration
+
+---
+
+### **After Login (Main UI)**
+
+**Sidebar Options:**
+
+1. Dashboard (Default View)
+2. Membership
+3. Add Member
+4. Logout
+
+---
+
+### **Dashboard Features (Main Panel)**
+
+1. **Joined Members**
+
+   * List all gym members
+   * Show:
+
+     * Photo
+     * Name
+     * Mobile Number
+   * Features:
+
+     * Pagination
+     * Filters: Name, Mobile Number, ID
+     * Click profile → Show full details:
+
+       * Profile Photo
+       * Name
+       * Phone Number
+       * Address
+       * Joined Date
+       * Next Bill Date
+       * Status: Active/Inactive (Toggle switch to change status)
+
+2. **Monthly Joined**
+
+   * Show members joined in the current month
+
+3. **Expiring Within 3 Days**
+
+   * Show members whose next bill date is within 3 days
+
+4. **Expiring Within a Week**
+
+   * Show members whose next bill date is within a week
+
+5. **Expired Members**
+
+   * Show members whose payment is overdue
+   * Show detailed info on click
+   * Button to renew membership
+
+6. **Inactive Members**
+
+   * Show members with inactive status
+
+---
+
+### **Sidebar Option: Membership**
+
+* Create New Membership:
+
+  * Number of Months
+  * Price
+
+---
+
+### **Sidebar Option: Add Member**
+
+* Fields:
+
+  * Profile Photo (camera/gallery)
+  * Name
+  * Phone Number
+  * Address
+  * Joining Date
+  * Membership Type
+  * Membership Fees
+  * ID (auto-generated)
+  * Payment Status: Paid / Not Paid
+
+* If "Not Paid", auto-move to expired list after 7 days
+
+---
+
+### **Sidebar Option: Logout**
+
+* Logout the currently logged-in user
+
+---
+
+### **Additional Features**
+
+**Core Functionality: Reminders & Notifications**
+
+1. **Welcome Message**
+
+   * Send a WhatsApp message to a new onboarded member
+
+2. **Payment Reminder**
+
+   * If the next bill date is within 3 days, send WhatsApp reminders:
+
+     * To the gym member
+     * To the gym owner
+
+3. **Birthday Wishes**
+
+   * Send birthday message via WhatsApp to gym members on their birthday
+
+---
+
+### **Technical Notes**
+
+* Design should be fully responsive and mobile-friendly
+* Use toast notifications for all major user actions
+* Use modern UI practices: sleek layout, intuitive navigation, clean interface
+* Backend should handle authentication, OTP validation, and reminders securely
+
+---
+
+Let me know if you’d like to define technologies (e.g., React + Node.js + MongoDB + Express, etc.) or specific design preferences (dark/light mode, theme colors, etc.).
