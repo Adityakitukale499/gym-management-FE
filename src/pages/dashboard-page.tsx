@@ -33,7 +33,9 @@ export default function DashboardPage() {
       <div className="p-6">
         <header className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Overview of your gym's membership status</p>
+          <p className="text-gray-600">
+            Overview of your gym's membership status
+          </p>
         </header>
 
         {/* Dashboard Stats */}
@@ -81,8 +83,8 @@ export default function DashboardPage() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <ExpiringMembers 
-            members={expiringMembers || []} 
+          <ExpiringMembers
+            members={Array.isArray(expiringMembers) ? expiringMembers : []}
             onViewMember={handleViewMember}
           />
         )}

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
-import { LoginData, loginSchema } from "@shared/schema";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -15,22 +15,29 @@ import {
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 
+const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+
 interface LoginFormProps {
   onForgotPassword: () => void;
 }
 
 export default function LoginForm({ onForgotPassword }: LoginFormProps) {
   const { loginMutation } = useAuth();
-  
-  const form = useForm<LoginData>({
+
+  const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
 
-  const onSubmit = (data: LoginData) => {
+  const onSubmit = (data: LoginFormValues) => {
     loginMutation.mutate(data);
   };
 
@@ -39,18 +46,22 @@ export default function LoginForm({ onForgotPassword }: LoginFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="username"
+          name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Username</FormLabel>
+              <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="Your username" {...field} />
+                <Input
+                  type="email"
+                  placeholder="your.email@example.com"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="password"
@@ -64,9 +75,9 @@ export default function LoginForm({ onForgotPassword }: LoginFormProps) {
             </FormItem>
           )}
         />
-        
-        <Button 
-          type="submit" 
+
+        <Button
+          type="submit"
           className="w-full"
           disabled={loginMutation.isPending}
         >
@@ -75,11 +86,11 @@ export default function LoginForm({ onForgotPassword }: LoginFormProps) {
           )}
           Sign In
         </Button>
-        
+
         <div className="text-center">
-          <Button 
-            type="button" 
-            variant="link" 
+          <Button
+            type="button"
+            variant="link"
             onClick={onForgotPassword}
             className="text-primary-600 hover:text-primary-700 text-sm font-medium"
           >

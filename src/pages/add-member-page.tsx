@@ -4,37 +4,65 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
+import { getMembershipPlans, addMember } from "@/lib/firestore";
 import AppLayout from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { insertMemberSchema, InsertMember, MembershipPlan } from "@shared/schema";
+import {
+  insertMemberSchema,
+  InsertMember,
+  MembershipPlan,
+} from "@shared/schema";
 import { z } from "zod";
 
 // Extend the schema for form validation
-const formSchema = insertMemberSchema.extend({
-  joiningDate: z.date(),
-  nextBillDate: z.date().optional(),
-}).omit({ gymId: true });
+const formSchema = insertMemberSchema
+  .extend({
+    joiningDate: z.date(),
+    nextBillDate: z.date().optional(),
+  })
+  .omit({ gymId: true });
 
 type FormValues = z.infer<typeof formSchema>;
 
 export default function AddMemberPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isPhotoUploaded, setIsPhotoUploaded] = useState(false);
-  
+
   // Fetch membership plans
-  const { data: membershipPlans = [], isLoading: isLoadingPlans } = useQuery<MembershipPlan[]>({
-    queryKey: ["/api/membership-plans"],
+  const { data: membershipPlans = [], isLoading: isLoadingPlans } = useQuery({
+    queryKey: ["membershipPlans"],
+    queryFn: () => getMembershipPlans(user?.id || ""),
+    enabled: !!user?.id,
   });
 
   // Form setup
@@ -55,23 +83,21 @@ export default function AddMemberPage() {
   const handleMembershipChange = (value: string) => {
     const planId = parseInt(value);
     form.setValue("membershipPlanId", planId);
-    
+
     // Find the selected plan
-    const selectedPlan = membershipPlans.find(plan => plan.id === planId);
+    const selectedPlan = membershipPlans.find((plan) => plan.id === planId);
     if (selectedPlan) {
-      // Calculate next bill date based on plan duration
       const joiningDate = form.getValues("joiningDate");
       const nextBillDate = new Date(joiningDate);
-      nextBillDate.setMonth(nextBillDate.getMonth() + selectedPlan.durationMonths);
+      nextBillDate.setMonth(
+        nextBillDate.getMonth() + selectedPlan.durationMonths
+      );
       form.setValue("nextBillDate", nextBillDate);
     }
   };
 
-  // Handle photo upload (simulated for now)
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      // In a real app, we would upload the file to a server
-      // For now, just pretend we uploaded it
       setIsPhotoUploaded(true);
       form.setValue("photo", "dummy-photo-url");
       toast({
@@ -84,8 +110,10 @@ export default function AddMemberPage() {
   // Add member mutation
   const addMemberMutation = useMutation({
     mutationFn: async (data: InsertMember) => {
-      const res = await apiRequest("POST", "/api/members", data);
-      return await res.json();
+      return addMember({
+        ...data,
+        gymId: user?.id,
+      });
     },
     onSuccess: () => {
       toast({
@@ -104,10 +132,10 @@ export default function AddMemberPage() {
       });
       setIsPhotoUploaded(false);
       // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ["/api/members"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["members"] });
     },
     onError: (error) => {
+      console.log(error);
       toast({
         title: "Failed to add member",
         description: error.message,
@@ -120,10 +148,11 @@ export default function AddMemberPage() {
   const onSubmit = (values: FormValues) => {
     const memberData: InsertMember = {
       ...values,
-      joiningDate: format(values.joiningDate, 'yyyy-MM-dd'),
-      nextBillDate: values.nextBillDate 
-        ? format(values.nextBillDate, 'yyyy-MM-dd')
-        : format(values.joiningDate, 'yyyy-MM-dd'),
+      gymId: user?.id || "",
+      joiningDate: format(values.joiningDate, "yyyy-MM-dd"),
+      nextBillDate: values.nextBillDate
+        ? format(values.nextBillDate, "yyyy-MM-dd")
+        : format(values.joiningDate, "yyyy-MM-dd"),
     };
     addMemberMutation.mutate(memberData);
   };
@@ -135,40 +164,72 @@ export default function AddMemberPage() {
           <h1 className="text-2xl font-bold text-gray-900">Add New Member</h1>
           <p className="text-gray-600">Register a new member to your gym</p>
         </header>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Member Information</CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
                 {/* Profile Photo */}
                 <div className="md:col-span-2">
                   <FormLabel>Profile Photo</FormLabel>
                   <div className="flex items-center mt-2">
-                    <div className={`w-20 h-20 rounded-full ${isPhotoUploaded ? 'bg-primary-100' : 'bg-gray-200'} flex items-center justify-center overflow-hidden mr-4`}>
+                    <div
+                      className={`w-20 h-20 rounded-full ${
+                        isPhotoUploaded ? "bg-primary-100" : "bg-gray-200"
+                      } flex items-center justify-center overflow-hidden mr-4`}
+                    >
                       {isPhotoUploaded ? (
                         <div className="text-primary-600">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-8 w-8"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
                           </svg>
                         </div>
                       ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-8 w-8 text-gray-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
                         </svg>
                       )}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center">
-                        <label htmlFor="photo-upload" className="cursor-pointer">
+                        <label
+                          htmlFor="photo-upload"
+                          className="cursor-pointer"
+                        >
                           <div className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 mr-3">
                             Upload Photo
                           </div>
-                          <input 
-                            id="photo-upload" 
-                            type="file" 
+                          <input
+                            id="photo-upload"
+                            type="file"
                             className="sr-only"
                             accept="image/*"
                             onChange={handlePhotoUpload}
@@ -178,11 +239,13 @@ export default function AddMemberPage() {
                           Take Photo
                         </Button>
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">JPG, PNG or GIF. Max size 2MB.</p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        JPG, PNG or GIF. Max size 2MB.
+                      </p>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Name */}
                   <FormField
@@ -192,13 +255,16 @@ export default function AddMemberPage() {
                       <FormItem>
                         <FormLabel>Full Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter member's full name" {...field} />
+                          <Input
+                            placeholder="Enter member's full name"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   {/* Phone */}
                   <FormField
                     control={form.control}
@@ -207,13 +273,16 @@ export default function AddMemberPage() {
                       <FormItem>
                         <FormLabel>Phone Number</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. +1 234-567-8900" {...field} />
+                          <Input
+                            placeholder="e.g. +1 234-567-8900"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   {/* Address */}
                   <FormField
                     control={form.control}
@@ -222,13 +291,17 @@ export default function AddMemberPage() {
                       <FormItem className="md:col-span-2">
                         <FormLabel>Address</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Enter member's address" {...field} />
+                          <Textarea
+                            placeholder="Enter member's address"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   {/* Joining Date */}
                   <FormField
                     control={form.control}
@@ -268,7 +341,7 @@ export default function AddMemberPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   {/* Membership Type */}
                   <FormField
                     control={form.control}
@@ -276,7 +349,7 @@ export default function AddMemberPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Membership Type</FormLabel>
-                        <Select 
+                        <Select
                           onValueChange={handleMembershipChange}
                           defaultValue={field.value?.toString()}
                         >
@@ -296,8 +369,13 @@ export default function AddMemberPage() {
                               </div>
                             ) : (
                               membershipPlans.map((plan) => (
-                                <SelectItem key={plan.id} value={plan.id.toString()}>
-                                  {plan.name} ({plan.durationMonths} Month{plan.durationMonths > 1 ? 's' : ''}) - ${plan.price}
+                                <SelectItem
+                                  key={plan.id}
+                                  value={plan.id.toString()}
+                                >
+                                  {plan.name} ({plan.durationMonths} Month
+                                  {plan.durationMonths > 1 ? "s" : ""}) - $
+                                  {plan.price}
                                 </SelectItem>
                               ))
                             )}
@@ -307,7 +385,7 @@ export default function AddMemberPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   {/* Payment Status */}
                   <FormField
                     control={form.control}
@@ -317,19 +395,27 @@ export default function AddMemberPage() {
                         <FormLabel>Payment Status</FormLabel>
                         <FormControl>
                           <RadioGroup
-                            onValueChange={(value) => field.onChange(value === "true")}
+                            onValueChange={(value) =>
+                              field.onChange(value === "true")
+                            }
                             defaultValue={field.value ? "true" : "false"}
                             className="flex space-x-4"
                           >
                             <div className="flex items-center space-x-2">
                               <RadioGroupItem value="true" id="paid" />
-                              <label htmlFor="paid" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                              <label
+                                htmlFor="paid"
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              >
                                 Paid
                               </label>
                             </div>
                             <div className="flex items-center space-x-2">
                               <RadioGroupItem value="false" id="not-paid" />
-                              <label htmlFor="not-paid" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                              <label
+                                htmlFor="not-paid"
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              >
                                 Not Paid
                               </label>
                             </div>
@@ -340,15 +426,12 @@ export default function AddMemberPage() {
                     )}
                   />
                 </div>
-                
+
                 <div className="mt-8 flex justify-end">
                   <Button type="button" variant="outline" className="mr-3">
                     Cancel
                   </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={addMemberMutation.isPending}
-                  >
+                  <Button type="submit" disabled={addMemberMutation.isPending}>
                     {addMemberMutation.isPending && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}

@@ -1,10 +1,20 @@
-import { pgTable, text, serial, integer, boolean, timestamp, date, real, foreignKey } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  timestamp,
+  date,
+  real,
+  foreignKey,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Gym owners table
 export const gyms = pgTable("gyms", {
-  id: serial("id").primaryKey(),
+  id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
   gymName: text("gym_name").notNull(),
   username: text("username").notNull().unique(),
@@ -20,7 +30,9 @@ export const membershipPlans = pgTable("membership_plans", {
   durationMonths: integer("duration_months").notNull(),
   price: real("price").notNull(),
   description: text("description"),
-  gymId: integer("gym_id").notNull().references(() => gyms.id, { onDelete: "cascade" }),
+  gymId: text("gym_id")
+    .notNull()
+    .references(() => gyms.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -35,8 +47,12 @@ export const members = pgTable("members", {
   nextBillDate: date("next_bill_date").notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   isPaid: boolean("is_paid").default(true).notNull(),
-  membershipPlanId: integer("membership_plan_id").references(() => membershipPlans.id),
-  gymId: integer("gym_id").notNull().references(() => gyms.id, { onDelete: "cascade" }),
+  membershipPlanId: integer("membership_plan_id").references(
+    () => membershipPlans.id
+  ),
+  gymId: text("gym_id")
+    .notNull()
+    .references(() => gyms.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -52,22 +68,24 @@ export const otps = pgTable("otps", {
 // Insert schemas
 export const insertGymSchema = createInsertSchema(gyms).omit({
   id: true,
-  createdAt: true
+  createdAt: true,
 });
 
-export const insertMembershipPlanSchema = createInsertSchema(membershipPlans).omit({
+export const insertMembershipPlanSchema = createInsertSchema(
+  membershipPlans
+).omit({
   id: true,
-  createdAt: true
+  createdAt: true,
 });
 
 export const insertMemberSchema = createInsertSchema(members).omit({
   id: true,
-  createdAt: true
+  createdAt: true,
 });
 
 export const insertOtpSchema = createInsertSchema(otps).omit({
   id: true,
-  createdAt: true
+  createdAt: true,
 });
 
 // Login schema

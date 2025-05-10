@@ -1,6 +1,5 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,11 +15,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { MembershipPlan, insertMembershipPlanSchema } from "@shared/schema";
 
-// We don't need gymId in the form since it's set on the server
-type FormValues = Omit<z.infer<typeof insertMembershipPlanSchema>, 'gymId'>;
+type FormValues = {
+  name: string;
+  durationMonths: number;
+  price: number;
+  description?: string;
+};
 
 interface MembershipPlanFormProps {
-  plan: MembershipPlan | null;
+  plan: Pick<
+    MembershipPlan,
+    "id" | "name" | "durationMonths" | "price" | "description"
+  > | null;
   onSubmit: (data: FormValues) => void;
   onCancel: () => void;
   isSubmitting: boolean;
@@ -60,7 +66,7 @@ export default function MembershipPlanForm({
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="durationMonths"
@@ -68,12 +74,16 @@ export default function MembershipPlanForm({
               <FormItem>
                 <FormLabel>Duration (Months)</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    min="1" 
-                    placeholder="e.g. 1, 3, 6, 12" 
-                    {...field} 
-                    onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : 1)}
+                  <Input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 1, 3, 6, 12"
+                    {...field}
+                    onChange={(e) =>
+                      field.onChange(
+                        e.target.value ? parseInt(e.target.value) : 1
+                      )
+                    }
                   />
                 </FormControl>
                 <FormDescription>
@@ -84,7 +94,7 @@ export default function MembershipPlanForm({
             )}
           />
         </div>
-        
+
         <FormField
           control={form.control}
           name="price"
@@ -92,20 +102,24 @@ export default function MembershipPlanForm({
             <FormItem>
               <FormLabel>Price ($)</FormLabel>
               <FormControl>
-                <Input 
-                  type="number" 
-                  min="0" 
-                  step="0.01" 
-                  placeholder="e.g. 49.99" 
-                  {...field} 
-                  onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 49.99"
+                  {...field}
+                  onChange={(e) =>
+                    field.onChange(
+                      e.target.value ? parseFloat(e.target.value) : 0
+                    )
+                  }
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="description"
@@ -113,9 +127,9 @@ export default function MembershipPlanForm({
             <FormItem>
               <FormLabel>Description (Optional)</FormLabel>
               <FormControl>
-                <Textarea 
-                  rows={3} 
-                  placeholder="Any additional details about this plan..." 
+                <Textarea
+                  rows={3}
+                  placeholder="Any additional details about this plan..."
                   value={field.value || ""}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
@@ -127,7 +141,7 @@ export default function MembershipPlanForm({
             </FormItem>
           )}
         />
-        
+
         <div className="flex justify-end pt-4">
           <Button
             type="button"
@@ -137,14 +151,9 @@ export default function MembershipPlanForm({
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-          >
-            {isSubmitting && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            {plan ? 'Update Plan' : 'Save Plan'}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {plan ? "Update Plan" : "Save Plan"}
           </Button>
         </div>
       </form>
