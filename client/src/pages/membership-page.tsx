@@ -102,7 +102,7 @@ export default function MembershipPage() {
   });
 
   // Form submission handler
-  const handleSubmit = (data: InsertMembershipPlan) => {
+  const handleSubmit = (data: Omit<InsertMembershipPlan, 'gymId'>) => {
     if (editingPlan) {
       updatePlanMutation.mutate({ id: editingPlan.id, data });
     } else {

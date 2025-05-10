@@ -46,8 +46,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new membership plan
   app.post("/api/membership-plans", isAuthenticated, async (req, res, next) => {
     try {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
       const planData = insertMembershipPlanSchema.parse(req.body);
-      const gymId = req.user?.id;
+      const gymId = req.user.id;
 
       const newPlan = await storage.createMembershipPlan({
         ...planData,
@@ -56,6 +60,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(newPlan);
     } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: error.message });
+      }
       next(error);
     }
   });
@@ -63,9 +70,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update a membership plan
   app.put("/api/membership-plans/:id", isAuthenticated, async (req, res, next) => {
     try {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
       const id = parseInt(req.params.id);
       const planData = insertMembershipPlanSchema.parse(req.body);
-      const gymId = req.user?.id;
+      const gymId = req.user.id;
 
       // Check if plan exists and belongs to this gym
       const existingPlan = await storage.getMembershipPlan(id);
@@ -80,6 +91,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(updatedPlan);
     } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: error.message });
+      }
       next(error);
     }
   });
