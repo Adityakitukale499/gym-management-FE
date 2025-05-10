@@ -73,7 +73,7 @@ export default function MembershipPlanForm({
                     min="1" 
                     placeholder="e.g. 1, 3, 6, 12" 
                     {...field} 
-                    onChange={e => field.onChange(parseInt(e.target.value))}
+                    onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : 1)}
                   />
                 </FormControl>
                 <FormDescription>
