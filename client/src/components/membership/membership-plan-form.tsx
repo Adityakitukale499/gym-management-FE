@@ -98,7 +98,7 @@ export default function MembershipPlanForm({
                   step="0.01" 
                   placeholder="e.g. 49.99" 
                   {...field} 
-                  onChange={e => field.onChange(parseFloat(e.target.value))}
+                  onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
                 />
               </FormControl>
               <FormMessage />
@@ -116,7 +116,11 @@ export default function MembershipPlanForm({
                 <Textarea 
                   rows={3} 
                   placeholder="Any additional details about this plan..." 
-                  {...field} 
+                  value={field.value || ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                  ref={field.ref}
                 />
               </FormControl>
               <FormMessage />
