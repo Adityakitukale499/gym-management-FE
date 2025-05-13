@@ -1,0 +1,47 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user is accessing their own data
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    // Gyms collection rules
+    match /gyms/{gymId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == gymId;
+    }
+
+    // Users collection rules
+    match /users/{userId} {
+      // Allow read and update if user owns the document
+      allow read, update: if isAuthenticated() && isOwner(userId);
+      // Allow create if the document ID matches the user's UID
+      allow create: if isAuthenticated() && request.resource.data.id == request.auth.uid;
+      // Allow delete if user owns the document
+      allow delete: if isAuthenticated() && isOwner(userId);
+      
+      // Nested collections under users
+      match /{document=**} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
+    }
+
+    // Allow public read access to membership plans
+    match /membershipPlans/{planId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isOwner(resource.data.gymId);
+    }
+
+    // Members collection rules
+    match /members/{memberId} {
+      allow read, write: if isAuthenticated() && isOwner(resource.data.gymId);
+    }
+  }
+} 
