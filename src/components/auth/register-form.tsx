@@ -14,10 +14,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Loader2, Upload } from "lucide-react";
-<<<<<<< HEAD
-=======
 import { uploadToCloudinary } from "@/lib/cloudinary";
->>>>>>> master
 
 const registerSchema = z
   .object({
@@ -41,10 +38,7 @@ interface RegisterFormProps {
 export default function RegisterForm({ onSuccess }: RegisterFormProps) {
   const { registerMutation } = useAuth();
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-<<<<<<< HEAD
-=======
   const [isUploading, setIsUploading] = useState(false);
->>>>>>> master
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -57,27 +51,6 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
     },
   });
 
-<<<<<<< HEAD
-  const onSubmit = (values: RegisterFormValues) => {
-    const { confirmPassword, ...gymData } = values;
-
-    registerMutation.mutate(gymData, {
-      onSuccess,
-    });
-  };
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-        form.setValue("photo", reader.result as string);
-      };
-
-      reader.readAsDataURL(file);
-=======
   const onSubmit = async (values: RegisterFormValues) => {
     const { confirmPassword, ...gymData } = values;
 
@@ -108,7 +81,6 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
       } finally {
         setIsUploading(false);
       }
->>>>>>> master
     }
   };
 
@@ -197,15 +169,6 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
                     onChange={handlePhotoChange}
                     className="hidden"
                     id="photo-upload"
-<<<<<<< HEAD
-                  />
-                  <label
-                    htmlFor="photo-upload"
-                    className="cursor-pointer inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Photo
-=======
                     disabled={isUploading}
                   />
                   <label
@@ -218,7 +181,6 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
                       <Upload className="h-4 w-4 mr-2" />
                     )}
                     {isUploading ? "Uploading..." : "Upload Photo"}
->>>>>>> master
                   </label>
                   {photoPreview && (
                     <img
@@ -237,11 +199,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
         <Button
           type="submit"
           className="w-full"
-<<<<<<< HEAD
-          disabled={registerMutation.isPending}
-=======
           disabled={registerMutation.isPending || isUploading}
->>>>>>> master
         >
           {registerMutation.isPending && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

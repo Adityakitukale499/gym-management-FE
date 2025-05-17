@@ -14,11 +14,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
-<<<<<<< HEAD
-=======
 import { FirebaseError } from "firebase/app";
 import { useToast } from "@/hooks/use-toast";
->>>>>>> master
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -33,10 +30,7 @@ interface LoginFormProps {
 
 export default function LoginForm({ onForgotPassword }: LoginFormProps) {
   const { loginMutation } = useAuth();
-<<<<<<< HEAD
-=======
   const { toast } = useToast();
->>>>>>> master
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -46,10 +40,6 @@ export default function LoginForm({ onForgotPassword }: LoginFormProps) {
     },
   });
 
-<<<<<<< HEAD
-  const onSubmit = (data: LoginFormValues) => {
-    loginMutation.mutate(data);
-=======
   const getErrorMessage = (error: FirebaseError): string => {
     switch (error.code) {
       case 'auth/user-not-found':
@@ -86,7 +76,6 @@ export default function LoginForm({ onForgotPassword }: LoginFormProps) {
         });
       }
     }
->>>>>>> master
   };
 
   return (

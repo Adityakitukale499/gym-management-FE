@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-<<<<<<< HEAD
-=======
 import { useAuth } from "@/hooks/use-auth";
->>>>>>> master
 import {
   collection,
   getDocs,
@@ -11,9 +8,6 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-<<<<<<< HEAD
-} from "firebase/firestore";
-=======
   query,
   where,
   getDoc,
@@ -23,7 +17,6 @@ import {
   addMembershipPlan,
   updateMembershipPlan,
 } from "@/lib/firestore";
->>>>>>> master
 import { useToast } from "@/hooks/use-toast";
 import AppLayout from "@/components/layout/app-layout";
 import MembershipPlanForm from "@/components/membership/membership-plan-form";
@@ -62,18 +55,12 @@ interface MembershipPlan {
   durationMonths: number;
   price: number;
   description?: string;
-<<<<<<< HEAD
-=======
   gymId: string;
->>>>>>> master
 }
 
 export default function MembershipPage() {
   const { toast } = useToast();
-<<<<<<< HEAD
-=======
   const { user } = useAuth();
->>>>>>> master
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showForm, setShowForm] = useState(false);
@@ -81,21 +68,11 @@ export default function MembershipPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const fetchPlans = async () => {
-<<<<<<< HEAD
-    setLoading(true);
-    try {
-      const snapshot = await getDocs(collection(db, "MEMBERSHIP_PLANS"));
-      const plansData: MembershipPlan[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as MembershipPlan[];
-=======
     if (!user?.id) return;
-    
+
     setLoading(true);
     try {
       const plansData = await getMembershipPlans(user.id);
->>>>>>> master
       setPlans(plansData);
     } catch (err: any) {
       toast({
@@ -109,16 +86,6 @@ export default function MembershipPage() {
   };
 
   useEffect(() => {
-<<<<<<< HEAD
-    fetchPlans();
-  }, []);
-
-  const handleSubmit = async (data: Omit<MembershipPlan, "id">) => {
-    setSubmitting(true);
-    try {
-      if (editingPlan) {
-        await updateDoc(doc(db, "MEMBERSHIP_PLANS", editingPlan.id), data);
-=======
     if (user?.id) {
       fetchPlans();
     }
@@ -141,20 +108,15 @@ export default function MembershipPage() {
           ...data,
           gymId: user.id,
         });
->>>>>>> master
         toast({
           title: "Plan updated",
           description: "Successfully updated plan",
         });
       } else {
-<<<<<<< HEAD
-        await addDoc(collection(db, "MEMBERSHIP_PLANS"), data);
-=======
         await addMembershipPlan({
           ...data,
           gymId: user.id,
         });
->>>>>>> master
         toast({
           title: "Plan created",
           description: "Successfully added new plan",
@@ -175,12 +137,6 @@ export default function MembershipPage() {
   };
 
   const handleDelete = async (id: string) => {
-<<<<<<< HEAD
-    try {
-      await deleteDoc(doc(db, "MEMBERSHIP_PLANS", id));
-      toast({ title: "Deleted", description: "Plan deleted successfully" });
-      fetchPlans();
-=======
     if (!user?.id) {
       toast({
         title: "Error",
@@ -193,12 +149,12 @@ export default function MembershipPage() {
     try {
       const planRef = doc(db, "MEMBERSHIP_PLANS", id);
       const planDoc = await getDoc(planRef);
-      
+
       if (planDoc.exists() && planDoc.data().gymId === user.id) {
         await deleteDoc(planRef);
-        toast({ 
-          title: "Deleted", 
-          description: "Plan deleted successfully" 
+        toast({
+          title: "Deleted",
+          description: "Plan deleted successfully"
         });
         fetchPlans();
       } else {
@@ -208,7 +164,6 @@ export default function MembershipPage() {
           variant: "destructive",
         });
       }
->>>>>>> master
     } catch (err: any) {
       toast({
         title: "Error",
