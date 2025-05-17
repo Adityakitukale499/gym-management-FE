@@ -63,10 +63,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+<<<<<<< HEAD
         // Get user data from Firestore
         const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
         if (userDoc.exists()) {
           setUser(userDoc.data() as Gym);
+=======
+        // Get gym data from Firestore
+        const gymDoc = await getDoc(doc(db, "gyms", firebaseUser.uid));
+        if (gymDoc.exists()) {
+          setUser(gymDoc.data() as Gym);
+>>>>>>> master
         }
       } else {
         setUser(null);
@@ -87,12 +94,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: "Welcome back!",
         });
       } catch (error) {
+<<<<<<< HEAD
         toast({
           title: "Login failed",
           description:
             error instanceof Error ? error.message : "An error occurred",
           variant: "destructive",
         });
+=======
+        // Don't show toast for login errors, let the form handle them
+>>>>>>> master
         throw error;
       } finally {
         setIsLoginPending(false);
@@ -112,15 +123,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           data.password
         );
 
+<<<<<<< HEAD
         // Create user document in Firestore
         const userData: Gym = {
+=======
+        // Create gym document in Firestore
+        const gymData: Gym = {
+>>>>>>> master
           ...data,
           id: userCredential.user.uid,
           createdAt: new Date(),
         };
 
+<<<<<<< HEAD
         await setDoc(doc(db, "users", userCredential.user.uid), {
           ...userData,
+=======
+        await setDoc(doc(db, "gyms", userCredential.user.uid), {
+          ...gymData,
+>>>>>>> master
           createdAt: serverTimestamp(),
         });
 

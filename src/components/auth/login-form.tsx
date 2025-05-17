@@ -14,6 +14,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
+<<<<<<< HEAD
+=======
+import { FirebaseError } from "firebase/app";
+import { useToast } from "@/hooks/use-toast";
+>>>>>>> master
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -28,6 +33,10 @@ interface LoginFormProps {
 
 export default function LoginForm({ onForgotPassword }: LoginFormProps) {
   const { loginMutation } = useAuth();
+<<<<<<< HEAD
+=======
+  const { toast } = useToast();
+>>>>>>> master
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -37,8 +46,47 @@ export default function LoginForm({ onForgotPassword }: LoginFormProps) {
     },
   });
 
+<<<<<<< HEAD
   const onSubmit = (data: LoginFormValues) => {
     loginMutation.mutate(data);
+=======
+  const getErrorMessage = (error: FirebaseError): string => {
+    switch (error.code) {
+      case 'auth/user-not-found':
+      case 'auth/invalid-credential':
+        return 'Invalid email or password';
+      case 'auth/wrong-password':
+        return 'Invalid email or password';
+      case 'auth/invalid-email':
+        return 'Please enter a valid email address';
+      case 'auth/too-many-requests':
+        return 'Too many failed attempts. Please try again later';
+      case 'auth/user-disabled':
+        return 'This account has been disabled';
+      default:
+        return 'Unable to sign in. Please check your credentials and try again';
+    }
+  };
+
+  const onSubmit = async (data: LoginFormValues) => {
+    try {
+      await loginMutation.mutate(data);
+    } catch (error) {
+      if (error instanceof FirebaseError) {
+        toast({
+          title: "Login Failed",
+          description: getErrorMessage(error),
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login Failed",
+          description: "Unable to sign in. Please try again",
+          variant: "destructive",
+        });
+      }
+    }
+>>>>>>> master
   };
 
   return (

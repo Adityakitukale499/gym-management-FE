@@ -13,6 +13,17 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 
+export interface MembershipPlan {
+  id: string;
+  name: string;
+  durationMonths: number;
+  price: number;
+  description?: string;
+  gymId: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export const FIRESTORE_COLLECTIONS = {
   MEMBERS: "members",
   MEMBERSHIP_PLANS: "membershipPlans",
@@ -75,36 +86,32 @@ export const deleteMember = async (memberId: string) => {
   return memberId;
 };
 
-export const addMembershipPlan = async (planData: DocumentData) => {
-  const plansRef = collection(db, FIRESTORE_COLLECTIONS.MEMBERSHIP_PLANS);
+export const addMembershipPlan = async (data: Omit<MembershipPlan, "id">) => {
+  const plansRef = collection(db, "MEMBERSHIP_PLANS");
   const docRef = await addDoc(plansRef, {
-    ...planData,
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
+    ...data,
+    createdAt: new Date(),
   });
-  return { id: docRef.id, ...planData };
+  return docRef.id;
 };
 
 export const getMembershipPlans = async (gymId: string) => {
-  const plansRef = collection(db, FIRESTORE_COLLECTIONS.MEMBERSHIP_PLANS);
+  const plansRef = collection(db, "MEMBERSHIP_PLANS");
   const q = query(plansRef, where("gymId", "==", gymId));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => ({
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map(doc => ({
     id: doc.id,
-    ...doc.data(),
-  }));
+    ...doc.data()
+  })) as MembershipPlan[];
 };
 
-export const updateMembershipPlan = async (
-  planId: string,
-  data: Partial<DocumentData>
-) => {
-  const planRef = doc(db, FIRESTORE_COLLECTIONS.MEMBERSHIP_PLANS, planId);
+export const updateMembershipPlan = async (id: string, data: Partial<MembershipPlan>) => {
+  const planRef = doc(db, "MEMBERSHIP_PLANS", id);
   await updateDoc(planRef, {
     ...data,
-    updatedAt: Timestamp.now(),
+    updatedAt: new Date(),
   });
-  return { id: planId, ...data };
 };
 
 export const deleteMembershipPlan = async (planId: string) => {
@@ -140,7 +147,7 @@ export const updateGym = async (gymId: string, data: Partial<DocumentData>) => {
   });
   return { id: gymId, ...data };
 };
-s;
+
 export const addPayment = async (paymentData: DocumentData) => {
   const paymentsRef = collection(db, FIRESTORE_COLLECTIONS.PAYMENTS);
   const docRef = await addDoc(paymentsRef, {
