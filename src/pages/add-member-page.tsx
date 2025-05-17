@@ -35,7 +35,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Loader2, Upload } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   insertMemberSchema,
@@ -43,13 +43,29 @@ import {
   MembershipPlan,
 } from "@shared/schema";
 import { z } from "zod";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Extend the schema for form validation
 const formSchema = insertMemberSchema
   .extend({
-    joiningDate: z.date(),
-    nextBillDate: z.date().optional(),
-    membershipPlanId: z.string().min(1, 'Membership plan is required'),
+    joiningDate: z.date({
+      required_error: "Joining date is required",
+    }),
+    nextBillDate: z.date({
+      required_error: "Next bill date is required",
+    }),
+    membershipPlanId: z.string({
+      required_error: "Please select a membership plan",
+    }),
+    dateOfBirth: z.date({
+      required_error: "Date of birth is required",
+    }),
+    name: z.string().min(1, "Name is required"),
+    phone: z.string().min(1, "Phone number is required"),
+    address: z.string().min(1, "Address is required"),
+    isActive: z.boolean(),
+    isPaid: z.boolean(),
+    photo: z.string().optional(),
   })
   .omit({ gymId: true });
 
@@ -58,8 +74,11 @@ type FormValues = z.infer<typeof formSchema>;
 export default function AddMemberPage() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [isPhotoUploaded, setIsPhotoUploaded] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [formKey, setFormKey] = useState(0);
+  const [checkboxKey, setCheckboxKey] = useState(0);
 
   // Fetch membership plans
   const { data: membershipPlans = [], isLoading: isLoadingPlans } = useQuery({
@@ -78,20 +97,24 @@ export default function AddMemberPage() {
       photo: "",
       joiningDate: new Date(),
       isActive: true,
-      isPaid: true,
+      isPaid: false,
+      membershipPlanId: undefined,
+      dateOfBirth: new Date(),
     },
+    mode: "onChange",
   });
 
   // Handle membership plan change
   const handleMembershipChange = (value: string) => {
-    form.setValue("membershipPlanId", value, { shouldValidate: true });
+    form.setValue("membershipPlanId", value);
+
     // Find the selected plan
     const selectedPlan = membershipPlans.find((plan) => plan.id === value);
     if (selectedPlan) {
       const joiningDate = form.getValues("joiningDate");
       const nextBillDate = new Date(joiningDate);
       nextBillDate.setMonth(
-        nextBillDate.getMonth() + (selectedPlan.durationMonths || 0)
+        nextBillDate.getMonth() + selectedPlan.durationMonths
       );
       form.setValue("nextBillDate", nextBillDate);
     }
@@ -113,6 +136,8 @@ export default function AddMemberPage() {
         // Upload to Cloudinary
         const cloudinaryUrl = await uploadToCloudinary(file);
         form.setValue("photo", cloudinaryUrl);
+        setIsPhotoUploaded(true);
+
         toast({
           title: "Photo uploaded",
           description: "Profile photo has been uploaded successfully.",
@@ -120,14 +145,34 @@ export default function AddMemberPage() {
       } catch (error) {
         console.error("Error uploading image:", error);
         toast({
-          title: "Upload failed",
-          description: "Failed to upload photo. Please try again.",
+          title: "Failed to upload photo",
+          description: "There was an error uploading the photo. Please try again.",
           variant: "destructive",
         });
       } finally {
         setIsUploading(false);
       }
     }
+  };
+
+  // Add cancel handler
+  const handleCancel = () => {
+    form.reset({
+      name: "",
+      phone: "",
+      address: "",
+      photo: "",
+      joiningDate: new Date(),
+      isActive: true,
+      isPaid: false,
+      membershipPlanId: undefined,
+      nextBillDate: undefined,
+      dateOfBirth: new Date(),
+    });
+    setIsPhotoUploaded(false);
+    setPhotoPreview(null);
+    setFormKey(prev => prev + 1);
+    setCheckboxKey(prev => prev + 1);
   };
 
   // Add member mutation
@@ -143,7 +188,7 @@ export default function AddMemberPage() {
         title: "Member added",
         description: "The new member has been added successfully.",
       });
-      // Reset form
+      // Reset form with all fields including membership type and payment date
       form.reset({
         name: "",
         phone: "",
@@ -151,9 +196,15 @@ export default function AddMemberPage() {
         photo: "",
         joiningDate: new Date(),
         isActive: true,
-        isPaid: true,
+        isPaid: false,
+        membershipPlanId: undefined,
+        nextBillDate: undefined,
+        dateOfBirth: new Date(),
       });
+      setIsPhotoUploaded(false);
       setPhotoPreview(null);
+      setFormKey(prev => prev + 1);
+      setCheckboxKey(prev => prev + 1);
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["members"] });
     },
@@ -169,22 +220,6 @@ export default function AddMemberPage() {
 
   // Form submission handler
   const onSubmit = (values: FormValues) => {
-    if (!values.membershipPlanId) {
-      toast({
-        title: "Missing Required Field",
-        description: "Please select a membership plan.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!values.name || !values.phone || !values.joiningDate) {
-      toast({
-        title: "Missing Required Field",
-        description: "Please fill all required fields.",
-        variant: "destructive",
-      });
-      return;
-    }
     const memberData: InsertMember = {
       ...values,
       gymId: user?.id || "",
@@ -192,7 +227,6 @@ export default function AddMemberPage() {
       nextBillDate: values.nextBillDate
         ? format(values.nextBillDate, "yyyy-MM-dd")
         : format(values.joiningDate, "yyyy-MM-dd"),
-      membershipPlanId: values.membershipPlanId,
     };
     addMemberMutation.mutate(memberData);
   };
@@ -212,6 +246,7 @@ export default function AddMemberPage() {
           <CardContent>
             <Form {...form}>
               <form
+                key={formKey}
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-6"
               >
@@ -220,15 +255,32 @@ export default function AddMemberPage() {
                   <FormLabel>Profile Photo</FormLabel>
                   <div className="flex items-center mt-2">
                     <div
-                      className={`w-20 h-20 rounded-full ${photoPreview ? "bg-primary-100" : "bg-gray-200"
+                      className={`w-20 h-20 rounded-full ${isPhotoUploaded ? "bg-primary-100" : "bg-gray-200"
                         } flex items-center justify-center overflow-hidden mr-4`}
                     >
                       {photoPreview ? (
                         <img
                           src={photoPreview}
                           alt="Preview"
-                          className="h-full w-full object-cover"
+                          className="w-full h-full object-cover"
                         />
+                      ) : isPhotoUploaded ? (
+                        <div className="text-primary-600">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-8 w-8"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        </div>
                       ) : (
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -254,11 +306,13 @@ export default function AddMemberPage() {
                         >
                           <div className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 mr-3">
                             {isUploading ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <div className="flex items-center">
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Uploading...
+                              </div>
                             ) : (
-                              <Upload className="h-4 w-4 mr-2" />
+                              "Upload Photo"
                             )}
-                            {isUploading ? "Uploading..." : "Upload Photo"}
                           </div>
                           <input
                             id="photo-upload"
@@ -269,6 +323,9 @@ export default function AddMemberPage() {
                             disabled={isUploading}
                           />
                         </label>
+                        <Button type="button" variant="ghost" size="sm" disabled={isUploading}>
+                          Take Photo
+                        </Button>
                       </div>
                       <p className="mt-1 text-xs text-gray-500">
                         JPG, PNG or GIF. Max size 2MB.
@@ -314,6 +371,46 @@ export default function AddMemberPage() {
                     )}
                   />
 
+                  {/* Date of Birth */}
+                  <FormField
+                    control={form.control}
+                    name="dateOfBirth"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Date of Birth</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   {/* Address */}
                   <FormField
                     control={form.control}
@@ -333,224 +430,111 @@ export default function AddMemberPage() {
                     )}
                   />
 
-                  {/* Joining Date */}
-                  <FormField
-                    control={form.control}
-                    name="joiningDate"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Joining Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
+                  {/* Membership Type with Payment Date */}
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="membershipPlanId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Membership Type</FormLabel>
+                          <Select
+                            onValueChange={handleMembershipChange}
+                            defaultValue={field.value}
+                          >
                             <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a membership plan" />
+                              </SelectTrigger>
                             </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-
-                    {/* Joining Date */}
-                <FormField
-                    control={form.control}
-                    name="joiningDate"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Joining Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Membership Type */}
-                  <FormField
-                    control={form.control}
-                    name="membershipPlanId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Membership Type</FormLabel>
-                        <Select
-                          onValueChange={handleMembershipChange}
-                          value={field.value || ""}
-                          required
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a membership plan" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {isLoadingPlans ? (
-                              <div className="flex justify-center p-2">
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              </div>
-                            ) : membershipPlans.length === 0 ? (
-                              <div className="p-2 text-sm text-muted-foreground">
-                                No membership plans found
-                              </div>
-                            ) : (
-                              <>
-                                {membershipPlans.map((plan) => (
-                                  <SelectItem key={plan.id} value={plan.id}>
-                                    {plan.name} ({plan.durationMonths} month{plan.durationMonths > 1 ? 's' : ''}) - ${plan.price}
+                            <SelectContent>
+                              {isLoadingPlans ? (
+                                <div className="flex justify-center p-2">
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                </div>
+                              ) : membershipPlans.length === 0 ? (
+                                <div className="p-2 text-sm text-muted-foreground">
+                                  No membership plans found
+                                </div>
+                              ) : (
+                                membershipPlans.map((plan) => (
+                                  <SelectItem
+                                    key={plan.id}
+                                    value={plan.id}
+                                  >
+                                    {plan.name} ({plan.durationMonths} Month
+                                    {plan.durationMonths > 1 ? "s" : ""}) - ${plan.price}
                                   </SelectItem>
-                                ))}
-                              </>
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Payment Date Display */}
+                    <div className="rounded-md border p-4">
+                      <div className="flex flex-col space-y-1">
+                        <span className="text-sm font-medium text-muted-foreground">Payment Date</span>
+                        <span className="text-sm">
+                          {form.watch("nextBillDate")
+                            ? format(form.watch("nextBillDate") as Date, "PPP")
+                            : "Select a membership plan to see payment date"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Payment Status */}
                   <FormField
                     control={form.control}
                     name="isPaid"
                     render={({ field }) => (
-                      <FormItem className="space-y-3">
-                        <FormLabel>Payment Status</FormLabel>
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                         <FormControl>
-                          <RadioGroup
-                            onValueChange={(value) =>
-                              field.onChange(value === "true")
-                            }
-                            defaultValue={field.value ? "true" : "false"}
-                            className="flex space-x-4"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="true" id="paid" />
-                              <label
-                                htmlFor="paid"
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                              >
-                                Paid
-                              </label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="false" id="not-paid" />
-                              <label
-                                htmlFor="not-paid"
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                              >
-                                Not Paid
-                              </label>
-                            </div>
-                          </RadioGroup>
+                          <Checkbox
+                            key={checkboxKey}
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
-                        <FormMessage />
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Payment Status</FormLabel>
+                          <p className="text-sm text-muted-foreground">
+                            {field.value ? "Paid" : "Not Paid"}
+                          </p>
+                        </div>
                       </FormItem>
                     )}
                   />
                 </div>
-                {/* Payment Status */}
-                <FormField
-                  control={form.control}
-                  name="isPaid"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Payment Status</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={(value) =>
-                            field.onChange(value === "true")
-                          }
-                          defaultValue={field.value ? "true" : "false"}
-                          className="flex space-x-4"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="true" id="paid" />
-                            <label
-                              htmlFor="paid"
-                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                              Paid
-                            </label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="false" id="not-paid" />
-                            <label
-                              htmlFor="not-paid"
-                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                              Not Paid
-                            </label>
-                          </div>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
 
-              <div className="mt-8 flex justify-end">
-                <Button type="button" variant="outline" className="mr-3">
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={addMemberMutation.isPending}>
-                  {addMemberMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Add Member
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
-    </AppLayout >
+                <div className="mt-8 flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mr-3"
+                    onClick={handleCancel}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={addMemberMutation.isPending || !form.formState.isValid}
+                  >
+                    {addMemberMutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Add Member
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
+    </AppLayout>
   );
 }
