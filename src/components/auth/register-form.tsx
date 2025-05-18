@@ -20,6 +20,7 @@ const registerSchema = z
   .object({
     email: z.string().email("Invalid email address"),
     gymName: z.string().min(1, "Gym name is required"),
+    username: z.string().min(1, "Username is required"),
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
     photo: z.string().optional(),
@@ -31,11 +32,7 @@ const registerSchema = z
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
-interface RegisterFormProps {
-  onSuccess: () => void;
-}
-
-export default function RegisterForm({ onSuccess }: RegisterFormProps) {
+export default function RegisterForm() {
   const { registerMutation } = useAuth();
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -45,6 +42,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
     defaultValues: {
       email: "",
       gymName: "",
+      username: "",
       password: "",
       confirmPassword: "",
       photo: "",
@@ -53,9 +51,9 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
 
   const onSubmit = async (values: RegisterFormValues) => {
     const { confirmPassword, ...gymData } = values;
-
-    registerMutation.mutate(gymData, {
-      onSuccess: () => onSuccess(),
+    registerMutation.mutate({
+      ...gymData,
+      photo: gymData.photo || null,
     });
   };
 
@@ -121,6 +119,20 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
 
         <FormField
           control={form.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username</FormLabel>
+              <FormControl>
+                <Input placeholder="Choose a username" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="password"
           render={({ field }) => (
             <FormItem>
@@ -158,7 +170,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
         <FormField
           control={form.control}
           name="photo"
-          render={({ field }) => (
+          render={() => (
             <FormItem>
               <FormLabel>Gym Logo (Optional)</FormLabel>
               <FormControl>

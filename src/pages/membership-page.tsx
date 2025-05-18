@@ -1,17 +1,7 @@
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import {
-  collection,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  query,
-  where,
-  getDoc,
-} from "firebase/firestore";
+import { deleteDoc, doc, getDoc } from "firebase/firestore";
 import {
   getMembershipPlans,
   addMembershipPlan,
@@ -154,7 +144,7 @@ export default function MembershipPage() {
         await deleteDoc(planRef);
         toast({
           title: "Deleted",
-          description: "Plan deleted successfully"
+          description: "Plan deleted successfully",
         });
         fetchPlans();
       } else {

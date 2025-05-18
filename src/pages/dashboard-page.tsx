@@ -52,7 +52,7 @@ export default function DashboardPage() {
               color="success"
             />
             <StatsCard
-              title="Expiring (3 Days)"
+              title="Expiring soon"
               value={stats?.expiringThreeDays || 0}
               icon="clock"
               color="warning"

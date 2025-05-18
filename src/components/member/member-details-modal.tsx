@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Member, MembershipPlan } from "@shared/schema";
+import { Member } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Loader2, MessageSquare, Pencil } from "lucide-react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 interface MemberDetailsModalProps {
   member: Member | null;
@@ -29,23 +31,26 @@ export default function MemberDetailsModal({
 }: MemberDetailsModalProps) {
   const { toast } = useToast();
   const [isActive, setIsActive] = useState(member?.isActive || false);
-  
-  // Fetch the member's membership plan
-  const { data: membershipPlan, isLoading: isLoadingPlan } = useQuery<MembershipPlan>({
-    queryKey: [`/api/membership-plans/${member?.membershipPlanId}`],
-    enabled: !!member?.membershipPlanId && open,
-  });
-  
+  const [membershipPlan, setMembershipPlan] = useState<{
+    name: string;
+    durationMonths: number;
+  } | null>(null);
+  const [isLoadingPlan, setIsLoadingPlan] = useState(false);
+
   // Update member status mutation
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, isActive }: { id: number, isActive: boolean }) => {
-      const res = await apiRequest("PATCH", `/api/members/${id}/status`, { isActive });
+    mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
+      const res = await apiRequest("PATCH", `/api/members/${id}/status`, {
+        isActive,
+      });
       return res.json();
     },
     onSuccess: (data) => {
       toast({
         title: "Status updated",
-        description: `Member status updated to ${data.isActive ? 'active' : 'inactive'}.`,
+        description: `Member status updated to ${
+          data.isActive ? "active" : "inactive"
+        }.`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/members"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
@@ -56,27 +61,68 @@ export default function MemberDetailsModal({
         description: error.message,
         variant: "destructive",
       });
-      // Reset the switch to its original state
       setIsActive(member?.isActive || false);
     },
   });
-  
+
   // Handle status toggle
   const handleStatusChange = (checked: boolean) => {
     if (!member) return;
-    
     setIsActive(checked);
     updateStatusMutation.mutate({
       id: member.id,
       isActive: checked,
     });
   };
-  
+
   // Reset active state when modal opens with a new member
-  if (member && member.isActive !== isActive && !updateStatusMutation.isPending) {
-    setIsActive(member.isActive);
-  }
-  
+  useEffect(() => {
+    if (
+      member &&
+      member.isActive !== isActive &&
+      !updateStatusMutation.isPending
+    ) {
+      setIsActive(member.isActive);
+    }
+  }, [member]);
+
+  // Fetch membership plan from Firestore
+  useEffect(() => {
+    const fetchMembershipPlan = async () => {
+      if (!member?.membershipPlanId) {
+        setMembershipPlan(null);
+        return;
+      }
+
+      setIsLoadingPlan(true);
+      try {
+        const planRef = doc(
+          db,
+          "MEMBERSHIP_PLANS",
+          String(member.membershipPlanId)
+        );
+        const planSnap = await getDoc(planRef);
+
+        if (planSnap.exists()) {
+          const data = planSnap.data();
+          setMembershipPlan({
+            name: data.name,
+            durationMonths: data.durationMonths,
+          });
+        } else {
+          setMembershipPlan(null);
+        }
+      } catch (error) {
+        console.error("Error fetching membership plan:", error);
+        setMembershipPlan(null);
+      } finally {
+        setIsLoadingPlan(false);
+      }
+    };
+
+    fetchMembershipPlan();
+  }, [member?.membershipPlanId]);
+
   if (!member) return null;
 
   return (
@@ -85,7 +131,7 @@ export default function MemberDetailsModal({
         <DialogHeader>
           <DialogTitle>Member Details</DialogTitle>
         </DialogHeader>
-        
+
         <div className="flex flex-col md:flex-row">
           <div className="mb-6 md:mb-0 md:mr-6 flex-shrink-0">
             {member.photo ? (
@@ -102,11 +148,15 @@ export default function MemberDetailsModal({
               </div>
             )}
           </div>
-          
+
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">{member.name}</h2>
-            <p className="text-gray-600 mb-4">ID: GYM-{member.id.toString().padStart(4, '0')}</p>
-            
+            <h2 className="text-xl font-bold text-gray-900 mb-1">
+              {member.name}
+            </h2>
+            <p className="text-gray-600 mb-4">
+              ID: GYM-{member.id.toString().padStart(4, "0")}
+            </p>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-500">Phone Number</p>
@@ -114,11 +164,15 @@ export default function MemberDetailsModal({
               </div>
               <div>
                 <p className="text-sm text-gray-500">Joined Date</p>
-                <p className="font-medium">{format(new Date(member.joiningDate), 'MMMM d, yyyy')}</p>
+                <p className="font-medium">
+                  {format(new Date(member.joiningDate), "MMMM d, yyyy")}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Next Bill Date</p>
-                <p className="font-medium">{format(new Date(member.nextBillDate), 'MMMM d, yyyy')}</p>
+                <p className="font-medium">
+                  {format(new Date(member.nextBillDate), "MMMM d, yyyy")}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Membership</p>
@@ -129,7 +183,8 @@ export default function MemberDetailsModal({
                   </div>
                 ) : membershipPlan ? (
                   <p className="font-medium">
-                    {membershipPlan.name} ({membershipPlan.durationMonths} Month{membershipPlan.durationMonths !== 1 ? 's' : ''})
+                    {membershipPlan.name} ({membershipPlan.durationMonths} Month
+                    {membershipPlan.durationMonths !== 1 ? "s" : ""})
                   </p>
                 ) : (
                   <p className="text-muted-foreground">No membership plan</p>
@@ -137,11 +192,15 @@ export default function MemberDetailsModal({
               </div>
               <div className="md:col-span-2">
                 <p className="text-sm text-gray-500">Address</p>
-                <p className="font-medium">{member.address || 'No address provided'}</p>
+                <p className="font-medium">
+                  {member.address || "No address provided"}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Payment Status</p>
-                <p className="font-medium">{member.isPaid ? 'Paid' : 'Not Paid'}</p>
+                <p className="font-medium">
+                  {member.isPaid ? "Paid" : "Not Paid"}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Status</p>
@@ -152,11 +211,11 @@ export default function MemberDetailsModal({
                     disabled={updateStatusMutation.isPending}
                     id="member-status-toggle"
                   />
-                  <Label 
-                    htmlFor="member-status-toggle" 
+                  <Label
+                    htmlFor="member-status-toggle"
                     className="ml-2 text-sm font-medium text-gray-700"
                   >
-                    {isActive ? 'Active' : 'Inactive'}
+                    {isActive ? "Active" : "Inactive"}
                     {updateStatusMutation.isPending && (
                       <Loader2 className="inline-block ml-2 h-3 w-3 animate-spin" />
                     )}
@@ -166,7 +225,7 @@ export default function MemberDetailsModal({
             </div>
           </div>
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" className="gap-2">
             <MessageSquare className="h-4 w-4" />

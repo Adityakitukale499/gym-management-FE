@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -37,11 +36,7 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  insertMemberSchema,
-  InsertMember,
-  MembershipPlan,
-} from "@shared/schema";
+import { insertMemberSchema, InsertMember } from "@shared/schema";
 import { z } from "zod";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -224,6 +219,9 @@ export default function AddMemberPage() {
       nextBillDate: values.nextBillDate
         ? format(values.nextBillDate, "yyyy-MM-dd")
         : format(values.joiningDate, "yyyy-MM-dd"),
+      membershipPlanId: values.membershipPlanId
+        ? parseInt(values.membershipPlanId)
+        : undefined,
     };
     addMemberMutation.mutate(memberData);
   };

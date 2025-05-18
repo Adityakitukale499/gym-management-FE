@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
-import { MembershipPlan, insertMembershipPlanSchema } from "@shared/schema";
+import { insertMembershipPlanSchema } from "@shared/schema";
 
 type FormValues = {
   name: string;
@@ -22,11 +22,16 @@ type FormValues = {
   description?: string;
 };
 
+interface MembershipPlanProps {
+  id: string;
+  name: string;
+  durationMonths: number;
+  price: number;
+  description?: string;
+  gymId: string;
+}
 interface MembershipPlanFormProps {
-  plan: Pick<
-    MembershipPlan,
-    "id" | "name" | "durationMonths" | "price" | "description"
-  > | null;
+  plan: MembershipPlanProps | null;
   onSubmit: (data: FormValues) => void;
   onCancel: () => void;
   isSubmitting: boolean;
@@ -45,7 +50,7 @@ export default function MembershipPlanForm({
       name: plan?.name || "",
       durationMonths: plan?.durationMonths || 1,
       price: plan?.price || 0,
-      description: plan?.description || "",
+      description: plan?.description ?? "",
     },
   });
 

@@ -6,7 +6,6 @@ import {
   useState,
 } from "react";
 import {
-  User,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
@@ -23,7 +22,6 @@ import { Gym } from "@shared/schema";
 type AuthContextType = {
   user: Gym | null;
   isLoading: boolean;
-  error: Error | null;
   loginMutation: {
     mutate: (data: { email: string; password: string }) => Promise<void>;
     isPending: boolean;
@@ -52,7 +50,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [user, setUser] = useState<Gym | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
   const [isLoginPending, setIsLoginPending] = useState(false);
   const [isLogoutPending, setIsLogoutPending] = useState(false);
   const [isRegisterPending, setIsRegisterPending] = useState(false);
@@ -219,7 +216,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isLoading,
-        error,
         loginMutation,
         logoutMutation,
         registerMutation,
