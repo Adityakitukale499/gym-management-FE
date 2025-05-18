@@ -1,5 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import AppLayout from "@/components/layout/app-layout";
 import StatsCard from "@/components/dashboard/stats-card";
 import MembersTable from "@/components/dashboard/members-table";
@@ -7,22 +6,17 @@ import ExpiringMembers from "@/components/dashboard/expiring-members";
 import MemberDetailsModal from "@/components/member/member-details-modal";
 import { Member } from "@shared/schema";
 import { Loader2 } from "lucide-react";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useExpiringMembers } from "@/hooks/useExpiringMembers";
 
 export default function DashboardPage() {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch dashboard stats
-  const { data: stats, isLoading: isLoadingStats } = useQuery({
-    queryKey: ["/api/dashboard/stats"],
-  });
+  const { data: stats, isLoading: isLoadingStats } = useDashboardStats();
+  const { data: expiringMembers, isLoading: isLoadingExpiring } =
+    useExpiringMembers();
 
-  // Fetch members expiring soon
-  const { data: expiringMembers, isLoading: isLoadingExpiring } = useQuery({
-    queryKey: ["/api/members/expiring-soon"],
-  });
-
-  // Handle member click to view details
   const handleViewMember = (member: Member) => {
     setSelectedMember(member);
     setIsModalOpen(true);

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
@@ -42,19 +41,19 @@ export default function LoginForm({ onForgotPassword }: LoginFormProps) {
 
   const getErrorMessage = (error: FirebaseError): string => {
     switch (error.code) {
-      case 'auth/user-not-found':
-      case 'auth/invalid-credential':
-        return 'Invalid email or password';
-      case 'auth/wrong-password':
-        return 'Invalid email or password';
-      case 'auth/invalid-email':
-        return 'Please enter a valid email address';
-      case 'auth/too-many-requests':
-        return 'Too many failed attempts. Please try again later';
-      case 'auth/user-disabled':
-        return 'This account has been disabled';
+      case "auth/user-not-found":
+      case "auth/invalid-credential":
+        return "Invalid email or password";
+      case "auth/wrong-password":
+        return "Invalid email or password";
+      case "auth/invalid-email":
+        return "Please enter a valid email address";
+      case "auth/too-many-requests":
+        return "Too many failed attempts. Please try again later";
+      case "auth/user-disabled":
+        return "This account has been disabled";
       default:
-        return 'Unable to sign in. Please check your credentials and try again';
+        return "Unable to sign in. Please check your credentials and try again";
     }
   };
 

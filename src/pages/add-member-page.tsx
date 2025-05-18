@@ -80,14 +80,12 @@ export default function AddMemberPage() {
   const [formKey, setFormKey] = useState(0);
   const [checkboxKey, setCheckboxKey] = useState(0);
 
-  // Fetch membership plans
   const { data: membershipPlans = [], isLoading: isLoadingPlans } = useQuery({
     queryKey: ["membershipPlans"],
     queryFn: () => getMembershipPlans(user?.id || ""),
     enabled: !!user?.id,
   });
 
-  // Form setup
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -104,7 +102,6 @@ export default function AddMemberPage() {
     mode: "onChange",
   });
 
-  // Handle membership plan change
   const handleMembershipChange = (value: string) => {
     form.setValue("membershipPlanId", value);
 
@@ -146,7 +143,8 @@ export default function AddMemberPage() {
         console.error("Error uploading image:", error);
         toast({
           title: "Failed to upload photo",
-          description: "There was an error uploading the photo. Please try again.",
+          description:
+            "There was an error uploading the photo. Please try again.",
           variant: "destructive",
         });
       } finally {
@@ -171,8 +169,8 @@ export default function AddMemberPage() {
     });
     setIsPhotoUploaded(false);
     setPhotoPreview(null);
-    setFormKey(prev => prev + 1);
-    setCheckboxKey(prev => prev + 1);
+    setFormKey((prev) => prev + 1);
+    setCheckboxKey((prev) => prev + 1);
   };
 
   // Add member mutation
@@ -203,8 +201,8 @@ export default function AddMemberPage() {
       });
       setIsPhotoUploaded(false);
       setPhotoPreview(null);
-      setFormKey(prev => prev + 1);
-      setCheckboxKey(prev => prev + 1);
+      setFormKey((prev) => prev + 1);
+      setCheckboxKey((prev) => prev + 1);
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["members"] });
     },
@@ -218,7 +216,6 @@ export default function AddMemberPage() {
     },
   });
 
-  // Form submission handler
   const onSubmit = (values: FormValues) => {
     const memberData: InsertMember = {
       ...values,
@@ -250,13 +247,13 @@ export default function AddMemberPage() {
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-6"
               >
-                {/* Profile Photo */}
                 <div className="md:col-span-2">
                   <FormLabel>Profile Photo</FormLabel>
                   <div className="flex items-center mt-2">
                     <div
-                      className={`w-20 h-20 rounded-full ${isPhotoUploaded ? "bg-primary-100" : "bg-gray-200"
-                        } flex items-center justify-center overflow-hidden mr-4`}
+                      className={`w-20 h-20 rounded-full ${
+                        isPhotoUploaded ? "bg-primary-100" : "bg-gray-200"
+                      } flex items-center justify-center overflow-hidden mr-4`}
                     >
                       {photoPreview ? (
                         <img
@@ -323,7 +320,12 @@ export default function AddMemberPage() {
                             disabled={isUploading}
                           />
                         </label>
-                        <Button type="button" variant="ghost" size="sm" disabled={isUploading}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={isUploading}
+                        >
                           Take Photo
                         </Button>
                       </div>
@@ -335,7 +337,6 @@ export default function AddMemberPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Name */}
                   <FormField
                     control={form.control}
                     name="name"
@@ -353,7 +354,6 @@ export default function AddMemberPage() {
                     )}
                   />
 
-                  {/* Phone */}
                   <FormField
                     control={form.control}
                     name="phone"
@@ -458,12 +458,10 @@ export default function AddMemberPage() {
                                 </div>
                               ) : (
                                 membershipPlans.map((plan) => (
-                                  <SelectItem
-                                    key={plan.id}
-                                    value={plan.id}
-                                  >
+                                  <SelectItem key={plan.id} value={plan.id}>
                                     {plan.name} ({plan.durationMonths} Month
-                                    {plan.durationMonths > 1 ? "s" : ""}) - ${plan.price}
+                                    {plan.durationMonths > 1 ? "s" : ""}) - $
+                                    {plan.price}
                                   </SelectItem>
                                 ))
                               )}
@@ -477,7 +475,9 @@ export default function AddMemberPage() {
                     {/* Payment Date Display */}
                     <div className="rounded-md border p-4">
                       <div className="flex flex-col space-y-1">
-                        <span className="text-sm font-medium text-muted-foreground">Payment Date</span>
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Payment Date
+                        </span>
                         <span className="text-sm">
                           {form.watch("nextBillDate")
                             ? format(form.watch("nextBillDate") as Date, "PPP")
@@ -522,7 +522,9 @@ export default function AddMemberPage() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={addMemberMutation.isPending || !form.formState.isValid}
+                    disabled={
+                      addMemberMutation.isPending || !form.formState.isValid
+                    }
                   >
                     {addMemberMutation.isPending && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
