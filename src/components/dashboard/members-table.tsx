@@ -77,6 +77,8 @@ export default function MembersTable({ onViewMember }: MembersTableProps) {
         filtered = filtered.filter((m) => m.isActive && m.nextBillDate < today);
       } else if (filter === "inactive") {
         filtered = filtered.filter((m) => !m.isActive);
+      } else if (filter === "Not Paid") {
+        filtered = filtered.filter((m) => !m.isPaid);
       }
 
       setMembers(filtered);
@@ -151,26 +153,28 @@ export default function MembersTable({ onViewMember }: MembersTableProps) {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {["All", "active", "expired", "inactive"].map((status) => (
-              <Button
-                key={status}
-                variant={
-                  filter === (status === "All" ? null : status)
-                    ? "default"
-                    : "outline"
-                }
-                size="sm"
-                onClick={() => setFilter(status === "All" ? null : status)}
-              >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </Button>
-            ))}
+            {["All", "active", "expired", "inactive", "Not Paid"].map(
+              (status) => (
+                <Button
+                  key={status}
+                  variant={
+                    filter === (status === "All" ? null : status)
+                      ? "default"
+                      : "outline"
+                  }
+                  size="sm"
+                  onClick={() => setFilter(status === "All" ? null : status)}
+                >
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </Button>
+              )
+            )}
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
           <Table>
-            <TableHeader>
+            <TableHeader className="sticky top-0 bg-white z-10">
               <TableRow>
                 <TableHead>Member</TableHead>
                 <TableHead>ID</TableHead>

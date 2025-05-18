@@ -46,6 +46,12 @@ export default function DashboardPage() {
               color="primary"
             />
             <StatsCard
+              title="Total Active Members"
+              value={stats?.totalActiveMembers || 0}
+              icon="users"
+              color="info"
+            />
+            <StatsCard
               title="Monthly Joined"
               value={stats?.monthlyJoined || 0}
               icon="user-plus"
@@ -62,6 +68,12 @@ export default function DashboardPage() {
               value={stats?.expiredMembers || 0}
               icon="alert-triangle"
               color="danger"
+            />
+            <StatsCard
+              title="Payment pending"
+              value={stats?.notPaidMembers || 0}
+              icon="credit-card"
+              color="warning"
             />
           </div>
         )}

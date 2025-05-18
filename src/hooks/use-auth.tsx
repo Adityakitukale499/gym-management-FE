@@ -74,6 +74,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
+  // Add automatic logout after 24 hours
+  useEffect(() => {
+    if (user) {
+      const loginTime = new Date().getTime();
+      const checkSession = () => {
+        const currentTime = new Date().getTime();
+        const hoursSinceLogin = (currentTime - loginTime) / (1000 * 60 * 60);
+
+        if (hoursSinceLogin >= 24) {
+          logoutMutation.mutate();
+          toast({
+            title: "Session expired",
+            description:
+              "You have been automatically logged out after 24 hours.",
+          });
+        }
+      };
+
+      // Check every minute
+      const intervalId = setInterval(checkSession, 60000);
+
+      return () => clearInterval(intervalId);
+    }
+  }, [user]);
+
   const loginMutation = {
     mutate: async (data: { email: string; password: string }) => {
       try {

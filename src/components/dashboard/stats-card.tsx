@@ -1,15 +1,29 @@
-import { 
-  Activity, 
-  Users, 
-  UserPlus, 
-  Clock, 
-  AlertTriangle, 
-  UserMinus
+import {
+  Activity,
+  Users,
+  UserPlus,
+  Clock,
+  AlertTriangle,
+  UserMinus,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type IconType = "users" | "user-plus" | "clock" | "alert-triangle" | "user-minus" | "activity";
-type ColorType = "primary" | "success" | "warning" | "danger" | "info" | "secondary";
+type IconType =
+  | "users"
+  | "user-plus"
+  | "clock"
+  | "alert-triangle"
+  | "user-minus"
+  | "activity"
+  | "credit-card";
+type ColorType =
+  | "primary"
+  | "success"
+  | "warning"
+  | "danger"
+  | "info"
+  | "secondary";
 
 interface StatsCardProps {
   title: string;
@@ -18,9 +32,17 @@ interface StatsCardProps {
   color: ColorType;
 }
 
-export default function StatsCard({ title, value, icon, color }: StatsCardProps) {
+export default function StatsCard({
+  title,
+  value,
+  icon,
+  color,
+}: StatsCardProps) {
   // Map color to tailwind classes
-  const colorClasses: Record<ColorType, { border: string, bg: string, text: string }> = {
+  const colorClasses: Record<
+    ColorType,
+    { border: string; bg: string; text: string }
+  > = {
     primary: {
       border: "border-primary-500",
       bg: "bg-primary-50",
@@ -63,18 +85,32 @@ export default function StatsCard({ title, value, icon, color }: StatsCardProps)
       case "clock":
         return <Clock className={cn("h-6 w-6", colorClasses[color].text)} />;
       case "alert-triangle":
-        return <AlertTriangle className={cn("h-6 w-6", colorClasses[color].text)} />;
+        return (
+          <AlertTriangle className={cn("h-6 w-6", colorClasses[color].text)} />
+        );
       case "user-minus":
-        return <UserMinus className={cn("h-6 w-6", colorClasses[color].text)} />;
+        return (
+          <UserMinus className={cn("h-6 w-6", colorClasses[color].text)} />
+        );
       case "activity":
         return <Activity className={cn("h-6 w-6", colorClasses[color].text)} />;
+
+      case "credit-card": // ✅ Add this
+        return (
+          <CreditCard className={cn("h-6 w-6", colorClasses[color].text)} />
+        );
       default:
         return <Activity className={cn("h-6 w-6", colorClasses[color].text)} />;
     }
   };
 
   return (
-    <div className={cn("bg-white rounded-lg shadow p-5 border-l-4", colorClasses[color].border)}>
+    <div
+      className={cn(
+        "bg-white rounded-lg shadow p-5 border-l-4",
+        colorClasses[color].border
+      )}
+    >
       <div className="flex items-center justify-between">
         <div>
           <p className="text-gray-500 text-sm font-medium">{title}</p>

@@ -19,6 +19,14 @@ export const useDashboardStats = () => {
       const now = dayjs();
       const totalMembers = members.length;
 
+      const totalActiveMembers = members.filter(
+        (member) => member.isActive
+      ).length;
+
+      const notPaidMembers = members.filter(
+        (member) => member.isActive && !member.isPaid
+      ).length;
+
       const monthlyJoined = members.filter((member) =>
         dayjs(member.createdAt.toDate()).isSame(now, "month")
       ).length;
@@ -36,6 +44,8 @@ export const useDashboardStats = () => {
 
       return {
         totalMembers,
+        totalActiveMembers,
+        notPaidMembers,
         monthlyJoined,
         expiringThreeDays,
         expiredMembers,
