@@ -39,7 +39,7 @@ export const useDashboardStats = () => {
 
       const expiredMembers = members.filter((member) => {
         const nextBill = dayjs(member.nextBillDate);
-        return nextBill.isBefore(now, "day");
+        return nextBill.isBefore(now, "day") && member.isActive;
       }).length;
 
       return {

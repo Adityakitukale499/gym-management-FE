@@ -103,7 +103,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutate: async (data: { email: string; password: string }) => {
       try {
         setIsLoginPending(true);
-        await signInWithEmailAndPassword(auth, data.email, data.password);
+        const res = await signInWithEmailAndPassword(
+          auth,
+          data.email,
+          data.password
+        );
+        console.log({ res });
         toast({
           title: "Login successful",
           description: "Welcome back!",

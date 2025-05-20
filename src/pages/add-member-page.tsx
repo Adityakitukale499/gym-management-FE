@@ -100,7 +100,6 @@ export default function AddMemberPage() {
   const handleMembershipChange = (value: string) => {
     form.setValue("membershipPlanId", value);
 
-    // Find the selected plan
     const selectedPlan = membershipPlans.find((plan) => plan.id === value);
     if (selectedPlan) {
       const joiningDate = form.getValues("joiningDate");

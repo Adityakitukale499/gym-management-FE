@@ -1,11 +1,12 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { 
-  LayoutDashboard, 
-  Crown, 
-  UserPlus, 
-  LogOut 
+import {
+  LayoutDashboard,
+  Crown,
+  UserPlus,
+  LogOut,
+  PhoneCall,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -28,6 +29,11 @@ export default function Sidebar() {
       href: "/add-member",
       icon: UserPlus,
     },
+    {
+      name: "Whatsapp",
+      href: "/whatsapp",
+      icon: PhoneCall,
+    },
   ];
 
   const handleLogout = () => {
@@ -37,7 +43,12 @@ export default function Sidebar() {
   // Format initials for the avatar
   const getInitials = () => {
     if (!user || !user.gymName) return "G";
-    return user.gymName.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
+    return user.gymName
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase();
   };
 
   return (
@@ -54,13 +65,13 @@ export default function Sidebar() {
             </div>
           </div>
         </div>
-        
+
         <nav className="flex-1 py-4 overflow-y-auto">
           <ul className="space-y-1">
             {navItems.map((item) => (
               <li key={item.name}>
-                <a 
-                  href={item.href} 
+                <a
+                  href={item.href}
                   className={cn(
                     "flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg mx-2",
                     location === item.href && "bg-gray-800"
@@ -73,9 +84,9 @@ export default function Sidebar() {
             ))}
           </ul>
         </nav>
-        
+
         <div className="p-4 border-t border-gray-800">
-          <button 
+          <button
             onClick={handleLogout}
             className="flex items-center text-gray-300 hover:text-white w-full"
           >
