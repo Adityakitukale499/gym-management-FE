@@ -20,6 +20,7 @@ export interface MembershipPlan {
   price: number;
   description?: string;
   gymId: string;
+  isActive?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -87,7 +88,7 @@ export const deleteMember = async (memberId: string) => {
 };
 
 export const addMembershipPlan = async (data: Omit<MembershipPlan, "id">) => {
-  const plansRef = collection(db, "MEMBERSHIP_PLANS");
+  const plansRef = collection(db, FIRESTORE_COLLECTIONS.MEMBERSHIP_PLANS);
   const docRef = await addDoc(plansRef, {
     ...data,
     createdAt: new Date(),
@@ -96,7 +97,7 @@ export const addMembershipPlan = async (data: Omit<MembershipPlan, "id">) => {
 };
 
 export const getMembershipPlans = async (gymId: string) => {
-  const plansRef = collection(db, "MEMBERSHIP_PLANS");
+  const plansRef = collection(db, FIRESTORE_COLLECTIONS.MEMBERSHIP_PLANS);
   const q = query(plansRef, where("gymId", "==", gymId));
   const snapshot = await getDocs(q);
 
@@ -107,7 +108,7 @@ export const getMembershipPlans = async (gymId: string) => {
 };
 
 export const updateMembershipPlan = async (id: string, data: Partial<MembershipPlan>) => {
-  const planRef = doc(db, "MEMBERSHIP_PLANS", id);
+  const planRef = doc(db, FIRESTORE_COLLECTIONS.MEMBERSHIP_PLANS, id);
   await updateDoc(planRef, {
     ...data,
     updatedAt: new Date(),

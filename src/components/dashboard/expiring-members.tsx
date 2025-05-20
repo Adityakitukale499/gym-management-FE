@@ -27,7 +27,7 @@ export default function ExpiringMembers({
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Expiring Soon</CardTitle>
         <span className="text-sm text-gray-500">
-          Members with membership expiring within a week
+          Members with membership expiring within 3 days
         </span>
       </CardHeader>
       <CardContent>

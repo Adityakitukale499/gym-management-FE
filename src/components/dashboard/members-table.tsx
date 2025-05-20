@@ -232,7 +232,7 @@ export default function MembersTable({ onViewMember }: MembersTableProps) {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-gray-500">
-                      GYM-{member.id?.toString().padStart(4, "0")}
+                      {member.id?.toString().padStart(4, "0")}
                     </TableCell>
                     <TableCell className="text-sm text-gray-500">
                       {member.phone}

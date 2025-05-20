@@ -6,6 +6,7 @@ import {
   getMembershipPlans,
   addMembershipPlan,
   updateMembershipPlan,
+  FIRESTORE_COLLECTIONS
 } from "@/lib/firestore";
 import { useToast } from "@/hooks/use-toast";
 import AppLayout from "@/components/layout/app-layout";
@@ -46,6 +47,7 @@ interface MembershipPlan {
   price: number;
   description?: string;
   gymId: string;
+  isActive?: boolean;
 }
 
 export default function MembershipPage() {
@@ -56,6 +58,7 @@ export default function MembershipPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [planToToggle, setPlanToToggle] = useState<{id: string, currentStatus: boolean} | null>(null);
 
   const fetchPlans = async () => {
     if (!user?.id) return;
@@ -106,6 +109,7 @@ export default function MembershipPage() {
         await addMembershipPlan({
           ...data,
           gymId: user.id,
+          isActive: data.isActive !== undefined ? data.isActive : true,
         });
         toast({
           title: "Plan created",
@@ -137,7 +141,7 @@ export default function MembershipPage() {
     }
 
     try {
-      const planRef = doc(db, "MEMBERSHIP_PLANS", id);
+      const planRef = doc(db, FIRESTORE_COLLECTIONS.MEMBERSHIP_PLANS, id);
       const planDoc = await getDoc(planRef);
 
       if (planDoc.exists() && planDoc.data().gymId === user.id) {
@@ -158,6 +162,34 @@ export default function MembershipPage() {
       toast({
         title: "Error",
         description: `Failed to delete plan: ${err.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleActive = async (id: string, currentStatus: boolean) => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to update plans",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await updateMembershipPlan(id, {
+        isActive: !currentStatus,
+      });
+      toast({
+        title: "Status updated",
+        description: `Plan is now ${!currentStatus ? "active" : "inactive"}`,
+      });
+      fetchPlans();
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: `Failed to update plan status: ${err.message}`,
         variant: "destructive",
       });
     }
@@ -204,6 +236,7 @@ export default function MembershipPage() {
                     <TableHead>Duration</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Description</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -212,8 +245,47 @@ export default function MembershipPage() {
                     <TableRow key={plan.id}>
                       <TableCell>{plan.name}</TableCell>
                       <TableCell>{plan.durationMonths} month(s)</TableCell>
-                      <TableCell>${plan.price.toFixed(2)}</TableCell>
+                      <TableCell>₹{Math.round(plan.price)}</TableCell>
                       <TableCell>{plan.description || "-"}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <div className="mr-2">
+                            <div 
+                              className={`h-3 w-3 rounded-full ${plan.isActive !== false ? 'bg-green-500' : 'bg-red-400'}`}
+                            ></div>
+                          </div>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant={plan.isActive !== false ? "outline" : "secondary"} 
+                                size="sm"
+                              >
+                                {plan.isActive !== false ? "Active" : "Inactive"}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  {plan.isActive !== false ? "Deactivate" : "Activate"} plan?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {plan.isActive !== false 
+                                    ? "This plan will no longer be available for  members." 
+                                    : "This plan will become available for members."}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => toggleActive(plan.id, plan.isActive !== false)}
+                                >
+                                  {plan.isActive !== false ? "Deactivate" : "Activate"}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button
                           size="icon"
@@ -225,7 +297,7 @@ export default function MembershipPage() {
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <AlertDialog>
+                        {/* <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button size="icon" variant="ghost">
                               <Trash2 className="w-4 h-4 text-destructive" />
@@ -250,7 +322,7 @@ export default function MembershipPage() {
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
-                        </AlertDialog>
+                        </AlertDialog> */}
                       </TableCell>
                     </TableRow>
                   ))}

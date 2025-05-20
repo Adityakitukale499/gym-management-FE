@@ -14,13 +14,21 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { insertMembershipPlanSchema } from "@shared/schema";
+import { Switch } from "@/components/ui/switch";
+import { z } from "zod";
 
-type FormValues = {
-  name: string;
-  durationMonths: number;
-  price: number;
-  description?: string;
-};
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  durationMonths: z.number().min(1, "Duration must be at least 1 month"),
+  price: z.preprocess(
+    (val) => (val === '' || val === null ? undefined : Number(val)),
+    z.number().min(0, "Price cannot be negative").optional()
+  ),
+  description: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 interface MembershipPlanProps {
   id: string;
@@ -29,7 +37,9 @@ interface MembershipPlanProps {
   price: number;
   description?: string;
   gymId: string;
+  isActive?: boolean;
 }
+
 interface MembershipPlanFormProps {
   plan: MembershipPlanProps | null;
   onSubmit: (data: FormValues) => void;
@@ -45,12 +55,13 @@ export default function MembershipPlanForm({
 }: MembershipPlanFormProps) {
   // Initialize the form with the current plan's values or defaults
   const form = useForm<FormValues>({
-    resolver: zodResolver(insertMembershipPlanSchema.omit({ gymId: true })),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: plan?.name || "",
       durationMonths: plan?.durationMonths || 1,
-      price: plan?.price || 0,
+      price: plan?.price || undefined,
       description: plan?.description ?? "",
+      isActive: plan?.isActive !== false, // default to true if undefined
     },
   });
 
@@ -105,19 +116,23 @@ export default function MembershipPlanForm({
           name="price"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Price ($)</FormLabel>
+              <FormLabel>Price (₹)</FormLabel>
               <FormControl>
                 <Input
                   type="number"
                   min="0"
                   step="0.01"
                   placeholder="e.g. 49.99"
-                  {...field}
+                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  value={field.value === undefined ? "" : field.value}
                   onChange={(e) =>
                     field.onChange(
-                      e.target.value ? parseFloat(e.target.value) : 0
+                      e.target.value === "" ? undefined : parseFloat(e.target.value)
                     )
                   }
+                  onBlur={field.onBlur}
+                  name={field.name}
+                  ref={field.ref}
                 />
               </FormControl>
               <FormMessage />
@@ -143,6 +158,27 @@ export default function MembershipPlanForm({
                 />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="isActive"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">Active Status</FormLabel>
+                <FormDescription>
+                  Only active plans will be shown in the membership selection
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
             </FormItem>
           )}
         />
