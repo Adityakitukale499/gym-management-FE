@@ -5,6 +5,7 @@ import {
   LayoutDashboard, 
   Crown, 
   UserPlus, 
+  Calendar,
   LogOut 
 } from "lucide-react";
 
@@ -27,6 +28,11 @@ export default function Sidebar() {
       name: "Add Member",
       href: "/add-member",
       icon: UserPlus,
+    },
+    {
+      name: "Festival",
+      href: "/festival",
+      icon: Calendar,
     },
   ];
 
