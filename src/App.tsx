@@ -11,6 +11,7 @@ import DashboardPage from "@/pages/dashboard-page";
 import MembershipPage from "@/pages/membership-page";
 import AddMemberPage from "@/pages/add-member-page";
 import FestivalPage from "@/pages/festival";
+import WhatsAppLogin from "./pages/whatsapp";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <ProtectedRoute path="/membership" component={MembershipPage} />
       <ProtectedRoute path="/add-member" component={AddMemberPage} />
       <ProtectedRoute path="/festival" component={FestivalPage} />
+      <ProtectedRoute path="/whatsapp" component={() => <WhatsAppLogin />} />
       <Route component={NotFound} />
     </Switch>
   );
