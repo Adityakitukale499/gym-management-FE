@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { getMembershipPlans, addMember } from "@/lib/firestore";
+import { getMembershipPlans, addMember, updateMember, FIRESTORE_COLLECTIONS } from "@/lib/firestore";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import AppLayout from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,10 @@ import { cn } from "@/lib/utils";
 import { insertMemberSchema, InsertMember } from "@shared/schema";
 import { z } from "zod";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useLocation } from "wouter";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { DocumentData } from "firebase/firestore";
 
 // Extend the schema for form validation
 const formSchema = insertMemberSchema
@@ -74,13 +78,12 @@ export default function AddMemberPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [formKey, setFormKey] = useState(0);
   const [checkboxKey, setCheckboxKey] = useState(0);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [memberId, setMemberId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [location, navigate] = useLocation();
 
-  const { data: membershipPlans = [], isLoading: isLoadingPlans } = useQuery({
-    queryKey: ["membershipPlans"],
-    queryFn: () => getMembershipPlans(user?.id || ""),
-    enabled: !!user?.id,
-  });
-
+  // Initialize the form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -95,6 +98,151 @@ export default function AddMemberPage() {
       dateOfBirth: new Date(),
     },
     mode: "onChange",
+  });
+
+  // Parse URL parameters to check for edit mode
+  useEffect(() => {
+    // Get URL search params directly from the window location to handle browser refresh
+    const urlSearchParams = new URLSearchParams(window.location.search);
+    const id = urlSearchParams.get('id');
+    const mode = urlSearchParams.get('mode');
+    
+    console.log("URL params parsed from window.location:", { id, mode, search: window.location.search });
+    console.log("URL params from useLocation:", { location });
+    
+    if (id && mode === 'edit') {
+      setIsEditMode(true);
+      setMemberId(id);
+      console.log("Edit mode enabled for member ID:", id);
+    }
+  }, [location]);
+
+  // Fetch member data if in edit mode
+  useEffect(() => {
+    const fetchMemberData = async () => {
+      if (!memberId || !user?.id) return;
+      
+      // Log all collections for debugging
+      console.log("Firestore collections:", FIRESTORE_COLLECTIONS);
+      console.log("Members collection:", FIRESTORE_COLLECTIONS.MEMBERS);
+      console.log("Attempting to fetch member data for ID:", memberId);
+      
+      setIsLoading(true);
+      try {
+        // First try with "members" collection
+        const memberRef = doc(db, "members", memberId);
+        console.log("Trying path:", memberRef.path);
+        
+        let memberSnap = await getDoc(memberRef);
+        let memberData: DocumentData | undefined;
+        
+        if (!memberSnap.exists()) {
+          console.log("Document not found in 'members' collection, trying 'MEMBERS'");
+          // If not found, try with uppercase 'MEMBERS'
+          const memberRefUpper = doc(db, "MEMBERS", memberId);
+          memberSnap = await getDoc(memberRefUpper);
+        }
+        
+        console.log("Document exists:", memberSnap.exists());
+        
+        if (memberSnap.exists()) {
+          memberData = memberSnap.data();
+          console.log("Member data fetched:", memberData);
+          
+          // Convert string dates to Date objects for form
+          const joiningDate = parseDate(memberData?.joiningDate);
+          const nextBillDate = parseDate(memberData?.nextBillDate);
+          const dateOfBirth = parseDate(memberData?.dateOfBirth);
+          
+          // Force a redraw of the form with the new values
+          setFormKey(prev => prev + 1);
+          
+          // Use timeout to ensure React has time to process
+          setTimeout(() => {
+            console.log("Setting form values for member:", memberData?.name);
+            
+            // Set individual field values
+            form.setValue("name", memberData?.name || "");
+            form.setValue("phone", memberData?.phone || "");
+            form.setValue("address", memberData?.address || "");
+            form.setValue("photo", memberData?.photo || "");
+            form.setValue("joiningDate", joiningDate);
+            form.setValue("nextBillDate", nextBillDate);
+            form.setValue("dateOfBirth", dateOfBirth);
+            form.setValue("isActive", memberData?.isActive !== undefined ? memberData?.isActive : true);
+            form.setValue("isPaid", memberData?.isPaid || false);
+            
+            if (memberData?.membershipPlanId) {
+              form.setValue("membershipPlanId", String(memberData?.membershipPlanId));
+            }
+            
+            // Set photo preview if exists
+            if (memberData?.photo) {
+              setPhotoPreview(memberData?.photo);
+              setIsPhotoUploaded(true);
+            }
+            
+            console.log("Form values set:", form.getValues());
+          }, 100);
+          
+        } else {
+          toast({
+            title: "Member not found",
+            description: "The requested member could not be found.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching member:", error);
+        toast({
+          title: "Failed to load member",
+          description: "There was an error loading the member details.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    // Helper function to parse different date formats
+    const parseDate = (dateValue: any): Date => {
+      if (!dateValue) return new Date();
+      
+      // If it's a string
+      if (typeof dateValue === 'string') {
+        try {
+          return parse(dateValue, 'yyyy-MM-dd', new Date());
+        } catch (e) {
+          console.warn("Error parsing date string:", e);
+          return new Date();
+        }
+      } 
+      // If it's a Firestore Timestamp
+      else if (dateValue.toDate && typeof dateValue.toDate === 'function') {
+        try {
+          return dateValue.toDate();
+        } catch (e) {
+          console.warn("Error converting Firestore timestamp:", e);
+          return new Date();
+        }
+      }
+      // If it's already a Date object
+      else if (dateValue instanceof Date) {
+        return dateValue;
+      }
+      
+      return new Date();
+    };
+    
+    if (isEditMode && memberId && user?.id) {
+      fetchMemberData();
+    }
+  }, [isEditMode, memberId, toast, form, user?.id]);
+
+  const { data: membershipPlans = [], isLoading: isLoadingPlans } = useQuery({
+    queryKey: ["membershipPlans"],
+    queryFn: () => getMembershipPlans(user?.id || ""),
+    enabled: !!user?.id,
   });
 
   const handleMembershipChange = (value: string) => {
@@ -165,6 +313,8 @@ export default function AddMemberPage() {
     setPhotoPreview(null);
     setFormKey((prev) => prev + 1);
     setCheckboxKey((prev) => prev + 1);
+    // Navigate back to home page
+    navigate("/");
   };
 
   // Add member mutation
@@ -181,24 +331,11 @@ export default function AddMemberPage() {
         description: "The new member has been added successfully.",
       });
       // Reset form with all fields including membership type and payment date
-      form.reset({
-        name: "",
-        phone: "",
-        address: "",
-        photo: "",
-        joiningDate: new Date(),
-        isActive: true,
-        isPaid: false,
-        membershipPlanId: undefined,
-        nextBillDate: undefined,
-        dateOfBirth: new Date(),
-      });
-      setIsPhotoUploaded(false);
-      setPhotoPreview(null);
-      setFormKey((prev) => prev + 1);
-      setCheckboxKey((prev) => prev + 1);
+      handleCancel();
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["members"] });
+      // Navigate to home page
+      navigate("/");
     },
     onError: (error) => {
       console.log(error);
@@ -210,32 +347,77 @@ export default function AddMemberPage() {
     },
   });
 
+  // Update member mutation
+  const updateMemberMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertMember> }) => {
+      return updateMember(id, data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Member updated",
+        description: "The member has been updated successfully.",
+      });
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      
+      // Navigate back to dashboard
+      navigate("/");
+    },
+    onError: (error) => {
+      console.log(error);
+      toast({
+        title: "Failed to update member",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (values: FormValues) => {
     const memberData: InsertMember = {
-      ...values,
+      name: values.name,
+      phone: values.phone,
+      address: values.address,
+      photo: values.photo,
       gymId: user?.id || "",
       joiningDate: format(values.joiningDate, "yyyy-MM-dd"),
       nextBillDate: values.nextBillDate
         ? format(values.nextBillDate, "yyyy-MM-dd")
         : format(values.joiningDate, "yyyy-MM-dd"),
+      isActive: values.isActive,
+      isPaid: values.isPaid,
       membershipPlanId: values.membershipPlanId
         ? parseInt(values.membershipPlanId)
         : undefined,
     };
-    addMemberMutation.mutate(memberData);
+    
+    if (isEditMode && memberId) {
+      updateMemberMutation.mutate({ id: memberId, data: memberData });
+    } else {
+      addMemberMutation.mutate(memberData);
+    }
   };
 
   return (
     <AppLayout>
       <div className="p-6">
         <header className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Add New Member</h1>
-          <p className="text-gray-600">Register a new member to your gym</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isEditMode ? "Edit Member" : "Add New Member"}
+          </h1>
+          <p className="text-gray-600">
+            {isEditMode ? "Update member information" : "Register a new member to your gym"}
+          </p>
         </header>
 
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Member Information</CardTitle>
+            <CardTitle>{isEditMode ? "Edit Member Information" : "Member Information"}</CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -359,7 +541,7 @@ export default function AddMemberPage() {
                         <FormLabel>Phone Number</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="e.g. +1 234-567-8900"
+                            placeholder="e.g. +91 9876543210"
                             {...field}
                           />
                         </FormControl>
@@ -454,13 +636,16 @@ export default function AddMemberPage() {
                                   No membership plans found
                                 </div>
                               ) : (
-                                membershipPlans.map((plan) => (
-                                  <SelectItem key={plan.id} value={plan.id}>
-                                    {plan.name} ({plan.durationMonths} Month
-                                    {plan.durationMonths > 1 ? "s" : ""}) - $
-                                    {plan.price}
-                                  </SelectItem>
-                                ))
+                                // Only show active plans
+                                membershipPlans
+                                  .filter(plan => plan.isActive !== false)
+                                  .map((plan) => (
+                                    <SelectItem key={plan.id} value={plan.id}>
+                                      {plan.name} ({plan.durationMonths} Month
+                                      {plan.durationMonths > 1 ? "s" : ""}) - ₹
+                                      {Math.round(plan.price)}
+                                    </SelectItem>
+                                  ))
                               )}
                             </SelectContent>
                           </Select>
@@ -520,19 +705,21 @@ export default function AddMemberPage() {
                   <Button
                     type="submit"
                     disabled={
-                      addMemberMutation.isPending || !form.formState.isValid
+                      (isEditMode ? updateMemberMutation.isPending : addMemberMutation.isPending) || 
+                      !form.formState.isValid
                     }
                   >
-                    {addMemberMutation.isPending && (
+                    {(isEditMode ? updateMemberMutation.isPending : addMemberMutation.isPending) && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Add Member
+                    {isEditMode ? "Save Changes" : "Add Member"}
                   </Button>
                 </div>
               </form>
             </Form>
           </CardContent>
         </Card>
+        )}
       </div>
     </AppLayout>
   );

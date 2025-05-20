@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Crown,
   UserPlus,
+  Calendar,
   LogOut,
   PhoneCall,
 } from "lucide-react";
@@ -33,6 +34,11 @@ export default function MobileMenu() {
       name: "Add Member",
       href: "/add-member",
       icon: UserPlus,
+    },
+    {
+      name: "Festival",
+      href: "/festival",
+      icon: Calendar,
     },
     {
       name: "Whatsapp",

@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, MessageSquare, Pencil } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useLocation } from "wouter";
 
 interface MemberDetailsModalProps {
   member: Member | null;
@@ -36,6 +37,7 @@ export default function MemberDetailsModal({
     durationMonths: number;
   } | null>(null);
   const [isLoadingPlan, setIsLoadingPlan] = useState(false);
+  const [, navigate] = useLocation();
 
   // Update member status mutation
   const updateStatusMutation = useMutation({
@@ -123,6 +125,12 @@ export default function MemberDetailsModal({
     fetchMembershipPlan();
   }, [member?.membershipPlanId]);
 
+  const handleEditMember = () => {
+    if (!member) return;
+    navigate(`/add-member?id=${member.id}&mode=edit`);
+    onOpenChange(false);
+  };
+
   if (!member) return null;
 
   return (
@@ -154,7 +162,7 @@ export default function MemberDetailsModal({
               {member.name}
             </h2>
             <p className="text-gray-600 mb-4">
-              ID: GYM-{member.id.toString().padStart(4, "0")}
+              ID: {member.id.toString().padStart(4, "0")}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -231,7 +239,7 @@ export default function MemberDetailsModal({
             <MessageSquare className="h-4 w-4" />
             Send Message
           </Button>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={handleEditMember}>
             <Pencil className="h-4 w-4" />
             Edit Member
           </Button>
