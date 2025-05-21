@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import io from "socket.io-client";
 
-const socket = io("http://localhost:3001");
+const socket = io("https://gym-script.onrender.com");
 
 const WhatsAppLogin: React.FC = () => {
   const [qr, setQr] = useState<string | null>(null);
@@ -12,7 +12,7 @@ const WhatsAppLogin: React.FC = () => {
   useEffect(() => {
     const checkStatus = async () => {
       try {
-        const res = await fetch("http://localhost:3001/status");
+        const res = await fetch("https://gym-script.onrender.com/status");
         const data = await res.json();
         setLoggedIn(data.loggedIn);
         setLoading(false);
