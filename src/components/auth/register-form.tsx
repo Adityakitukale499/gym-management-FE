@@ -94,7 +94,7 @@ export default function RegisterForm() {
               <FormControl>
                 <Input
                   type="email"
-                  placeholder="your.email@example.com"
+                  placeholder="example@gmail.com"
                   {...field}
                 />
               </FormControl>
