@@ -1,0 +1,22 @@
+.auth-bg-container {
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  width: 100%;
+  height: 100vh;
+}
+
+/* Mobile styles */
+@media (max-width: 767px) {
+  .auth-bg-container {
+    background-image: url('/royal-gym-logo.png');
+    background-size: cover;
+    background-position: center;
+  }
+}
+
+/* Desktop styles */
+@media (min-width: 768px) {
+  .auth-bg-container {
+    background: linear-gradient(to right, #0f172a, #1e293b);
+  }
+} 
