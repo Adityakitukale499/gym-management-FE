@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 **Prompt for Replit: Fullstack Gym Management Web Application**
 
 **Project Title:** Gym Management System Web App
@@ -167,7 +166,6 @@
 ---
 
 Let me know if you’d like to define technologies (e.g., React + Node.js + MongoDB + Express, etc.) or specific design preferences (dark/light mode, theme colors, etc.).
-=======
 **Prompt for Replit: Fullstack Gym Management Web Application**
 
 **Project Title:** Gym Management System Web App
@@ -336,4 +334,3 @@ Let me know if you’d like to define technologies (e.g., React + Node.js + Mong
 ---
 
 Let me know if you’d like to define technologies (e.g., React + Node.js + MongoDB + Express, etc.) or specific design preferences (dark/light mode, theme colors, etc.).
->>>>>>> master
