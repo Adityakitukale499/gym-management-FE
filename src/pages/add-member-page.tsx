@@ -6,7 +6,12 @@ import { format, parse } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { getMembershipPlans, addMember, updateMember, FIRESTORE_COLLECTIONS } from "@/lib/firestore";
+import {
+  getMembershipPlans,
+  addMember,
+  updateMember,
+  FIRESTORE_COLLECTIONS,
+} from "@/lib/firestore";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import AppLayout from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
@@ -104,13 +109,17 @@ export default function AddMemberPage() {
   useEffect(() => {
     // Get URL search params directly from the window location to handle browser refresh
     const urlSearchParams = new URLSearchParams(window.location.search);
-    const id = urlSearchParams.get('id');
-    const mode = urlSearchParams.get('mode');
-    
-    console.log("URL params parsed from window.location:", { id, mode, search: window.location.search });
+    const id = urlSearchParams.get("id");
+    const mode = urlSearchParams.get("mode");
+
+    console.log("URL params parsed from window.location:", {
+      id,
+      mode,
+      search: window.location.search,
+    });
     console.log("URL params from useLocation:", { location });
-    
-    if (id && mode === 'edit') {
+
+    if (id && mode === "edit") {
       setIsEditMode(true);
       setMemberId(id);
       console.log("Edit mode enabled for member ID:", id);
@@ -121,46 +130,48 @@ export default function AddMemberPage() {
   useEffect(() => {
     const fetchMemberData = async () => {
       if (!memberId || !user?.id) return;
-      
+
       // Log all collections for debugging
       console.log("Firestore collections:", FIRESTORE_COLLECTIONS);
       console.log("Members collection:", FIRESTORE_COLLECTIONS.MEMBERS);
       console.log("Attempting to fetch member data for ID:", memberId);
-      
+
       setIsLoading(true);
       try {
         // First try with "members" collection
         const memberRef = doc(db, "members", memberId);
         console.log("Trying path:", memberRef.path);
-        
+
         let memberSnap = await getDoc(memberRef);
         let memberData: DocumentData | undefined;
-        
+
         if (!memberSnap.exists()) {
-          console.log("Document not found in 'members' collection, trying 'MEMBERS'");
+          console.log(
+            "Document not found in 'members' collection, trying 'MEMBERS'"
+          );
           // If not found, try with uppercase 'MEMBERS'
           const memberRefUpper = doc(db, "MEMBERS", memberId);
           memberSnap = await getDoc(memberRefUpper);
         }
-        
+
         console.log("Document exists:", memberSnap.exists());
-        
+
         if (memberSnap.exists()) {
           memberData = memberSnap.data();
           console.log("Member data fetched:", memberData);
-          
+
           // Convert string dates to Date objects for form
           const joiningDate = parseDate(memberData?.joiningDate);
           const nextBillDate = parseDate(memberData?.nextBillDate);
           const dateOfBirth = parseDate(memberData?.dateOfBirth);
-          
+
           // Force a redraw of the form with the new values
-          setFormKey(prev => prev + 1);
-          
+          setFormKey((prev) => prev + 1);
+
           // Use timeout to ensure React has time to process
           setTimeout(() => {
             console.log("Setting form values for member:", memberData?.name);
-            
+
             // Set individual field values
             form.setValue("name", memberData?.name || "");
             form.setValue("phone", memberData?.phone || "");
@@ -169,22 +180,27 @@ export default function AddMemberPage() {
             form.setValue("joiningDate", joiningDate);
             form.setValue("nextBillDate", nextBillDate);
             form.setValue("dateOfBirth", dateOfBirth);
-            form.setValue("isActive", memberData?.isActive !== undefined ? memberData?.isActive : true);
+            form.setValue(
+              "isActive",
+              memberData?.isActive !== undefined ? memberData?.isActive : true
+            );
             form.setValue("isPaid", memberData?.isPaid || false);
-            
+
             if (memberData?.membershipPlanId) {
-              form.setValue("membershipPlanId", String(memberData?.membershipPlanId));
+              form.setValue(
+                "membershipPlanId",
+                String(memberData?.membershipPlanId)
+              );
             }
-            
+
             // Set photo preview if exists
             if (memberData?.photo) {
               setPhotoPreview(memberData?.photo);
               setIsPhotoUploaded(true);
             }
-            
+
             console.log("Form values set:", form.getValues());
           }, 100);
-          
         } else {
           toast({
             title: "Member not found",
@@ -203,22 +219,22 @@ export default function AddMemberPage() {
         setIsLoading(false);
       }
     };
-    
+
     // Helper function to parse different date formats
     const parseDate = (dateValue: any): Date => {
       if (!dateValue) return new Date();
-      
+
       // If it's a string
-      if (typeof dateValue === 'string') {
+      if (typeof dateValue === "string") {
         try {
-          return parse(dateValue, 'yyyy-MM-dd', new Date());
+          return parse(dateValue, "yyyy-MM-dd", new Date());
         } catch (e) {
           console.warn("Error parsing date string:", e);
           return new Date();
         }
-      } 
+      }
       // If it's a Firestore Timestamp
-      else if (dateValue.toDate && typeof dateValue.toDate === 'function') {
+      else if (dateValue.toDate && typeof dateValue.toDate === "function") {
         try {
           return dateValue.toDate();
         } catch (e) {
@@ -230,10 +246,10 @@ export default function AddMemberPage() {
       else if (dateValue instanceof Date) {
         return dateValue;
       }
-      
+
       return new Date();
     };
-    
+
     if (isEditMode && memberId && user?.id) {
       fetchMemberData();
     }
@@ -241,7 +257,7 @@ export default function AddMemberPage() {
 
   const { data: membershipPlans = [], isLoading: isLoadingPlans } = useQuery({
     queryKey: ["membershipPlans"],
-    queryFn: () => getMembershipPlans(user?.id || ""),
+    queryFn: () => getMembershipPlans(),
     enabled: !!user?.id,
   });
 
@@ -320,24 +336,28 @@ export default function AddMemberPage() {
   // Function to send WhatsApp welcome message
   const sendWelcomeWhatsApp = async (phone: string, name: string) => {
     try {
-      const welcomeMessage = `Hey ${name}! 👋 Welcome to the Royal Gym family in Mauda! 🏋️‍♂️ We're thrilled to have you with us. Let's crush those fitness goals together. 💪 If you need anything, we’re just a message away! 🔥`;
-      const response = await fetch('https://gym-script.onrender.com/send-whatsapp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          phone,
-          message: welcomeMessage,
-        }),
-      });
+      const welcomeMessage = `Hey ${name}! 👋 Welcome to the Royal Gym family in Mauda! 🏋️‍♂️ We're thrilled to have you with us. Let's crush those fitness goals together. 💪 If you need anything, we're just a message away! 🔥`;
+      const response = await fetch(
+        "https://gym-script.onrender.com/send-whatsapp",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            phone,
+            message: welcomeMessage,
+          }),
+        }
+      );
 
       const data = await response.json();
-      
+
       if (data.success) {
         toast({
           title: "Welcome message sent",
-          description: "A welcome message has been sent to the member's WhatsApp.",
+          description:
+            "A welcome message has been sent to the member's WhatsApp.",
         });
       } else {
         console.error("Failed to send WhatsApp message:", data.error);
@@ -350,6 +370,7 @@ export default function AddMemberPage() {
   // Add member mutation
   const addMemberMutation = useMutation({
     mutationFn: async (data: InsertMember) => {
+      console.log({ data });
       return addMember({
         ...data,
         gymId: user?.id,
@@ -360,10 +381,10 @@ export default function AddMemberPage() {
         title: "Member added",
         description: "The new member has been added successfully.",
       });
-      
+
       // Send welcome WhatsApp message
       sendWelcomeWhatsApp(variables.phone, variables.name);
-      
+
       // Reset form with all fields including membership type and payment date
       handleCancel();
       // Invalidate relevant queries
@@ -383,7 +404,13 @@ export default function AddMemberPage() {
 
   // Update member mutation
   const updateMemberMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertMember> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<InsertMember>;
+    }) => {
       return updateMember(id, data);
     },
     onSuccess: () => {
@@ -393,7 +420,7 @@ export default function AddMemberPage() {
       });
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["members"] });
-      
+
       // Navigate back to dashboard
       navigate("/");
     },
@@ -424,7 +451,7 @@ export default function AddMemberPage() {
         ? parseInt(values.membershipPlanId)
         : undefined,
     };
-    
+
     if (isEditMode && memberId) {
       updateMemberMutation.mutate({ id: memberId, data: memberData });
     } else {
@@ -440,7 +467,9 @@ export default function AddMemberPage() {
             {isEditMode ? "Edit Member" : "Add New Member"}
           </h1>
           <p className="text-gray-600">
-            {isEditMode ? "Update member information" : "Register a new member to your gym"}
+            {isEditMode
+              ? "Update member information"
+              : "Register a new member to your gym"}
           </p>
         </header>
 
@@ -449,36 +478,54 @@ export default function AddMemberPage() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>{isEditMode ? "Edit Member Information" : "Member Information"}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form
-                key={formKey}
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
-              >
-                <div className="md:col-span-2">
-                  <FormLabel>Profile Photo</FormLabel>
-                  <div className="flex items-center mt-2">
-                    <div
-                      className={`w-20 h-20 rounded-full ${
-                        isPhotoUploaded ? "bg-primary-100" : "bg-gray-200"
-                      } flex items-center justify-center overflow-hidden mr-4`}
-                    >
-                      {photoPreview ? (
-                        <img
-                          src={photoPreview}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : isPhotoUploaded ? (
-                        <div className="text-primary-600">
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {isEditMode ? "Edit Member Information" : "Member Information"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form
+                  key={formKey}
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6"
+                >
+                  <div className="md:col-span-2">
+                    <FormLabel>Profile Photo</FormLabel>
+                    <div className="flex items-center mt-2">
+                      <div
+                        className={`w-20 h-20 rounded-full ${
+                          isPhotoUploaded ? "bg-primary-100" : "bg-gray-200"
+                        } flex items-center justify-center overflow-hidden mr-4`}
+                      >
+                        {photoPreview ? (
+                          <img
+                            src={photoPreview}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : isPhotoUploaded ? (
+                          <div className="text-primary-600">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-8 w-8"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          </div>
+                        ) : (
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="h-8 w-8"
+                            className="h-8 w-8 text-gray-400"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -487,272 +534,330 @@ export default function AddMemberPage() {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                               strokeWidth={2}
-                              d="M5 13l4 4L19 7"
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                             />
                           </svg>
-                        </div>
-                      ) : (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-8 w-8 text-gray-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center">
-                        <label
-                          htmlFor="photo-upload"
-                          className="cursor-pointer"
-                        >
-                          <div className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 mr-3">
-                            {isUploading ? (
-                              <div className="flex items-center">
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Uploading...
-                              </div>
-                            ) : (
-                              "Upload Photo"
-                            )}
-                          </div>
-                          <input
-                            id="photo-upload"
-                            type="file"
-                            className="sr-only"
-                            accept="image/*"
-                            onChange={handlePhotoUpload}
-                            disabled={isUploading}
-                          />
-                        </label>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          disabled={isUploading}
-                        >
-                          Take Photo
-                        </Button>
+                        )}
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">
-                        JPG, PNG or GIF. Max size 2MB.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter member's full name"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="e.g. +91 9876543210"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Date of Birth */}
-                  <FormField
-                    control={form.control}
-                    name="dateOfBirth"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Date of Birth</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Address */}
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem className="md:col-span-2">
-                        <FormLabel>Address</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Enter member's address"
-                            {...field}
-                            value={field.value ?? ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Membership Type with Payment Date */}
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="membershipPlanId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Membership Type</FormLabel>
-                          <Select
-                            onValueChange={handleMembershipChange}
-                            defaultValue={field.value}
+                      <div className="flex-1">
+                        <div className="flex items-center">
+                          <label
+                            htmlFor="photo-upload"
+                            className="cursor-pointer"
                           >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a membership plan" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {isLoadingPlans ? (
-                                <div className="flex justify-center p-2">
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                </div>
-                              ) : membershipPlans.length === 0 ? (
-                                <div className="p-2 text-sm text-muted-foreground">
-                                  No membership plans found
+                            <div className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 mr-3">
+                              {isUploading ? (
+                                <div className="flex items-center">
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Uploading...
                                 </div>
                               ) : (
-                                // Only show active plans
-                                membershipPlans
-                                  .filter(plan => plan.isActive !== false)
-                                  .map((plan) => (
-                                    <SelectItem key={plan.id} value={plan.id}>
-                                      {plan.name} ({plan.durationMonths} Month
-                                      {plan.durationMonths > 1 ? "s" : ""}) - ₹
-                                      {Math.round(plan.price)}
-                                    </SelectItem>
-                                  ))
+                                "Upload Photo"
                               )}
-                            </SelectContent>
-                          </Select>
+                            </div>
+                            <input
+                              id="photo-upload"
+                              type="file"
+                              className="sr-only"
+                              accept="image/*"
+                              onChange={handlePhotoUpload}
+                              disabled={isUploading}
+                            />
+                          </label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={isUploading}
+                          >
+                            Take Photo
+                          </Button>
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">
+                          JPG, PNG or GIF. Max size 2MB.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Name</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter member's full name"
+                              {...field}
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
-                    {/* Payment Date Display */}
-                    <div className="rounded-md border p-4">
-                      <div className="flex flex-col space-y-1">
-                        <span className="text-sm font-medium text-muted-foreground">
-                          Payment Date
-                        </span>
-                        <span className="text-sm">
-                          {form.watch("nextBillDate")
-                            ? format(form.watch("nextBillDate") as Date, "PPP")
-                            : "Select a membership plan to see payment date"}
-                        </span>
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g. +91 9876543210"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Date of Birth */}
+                    <FormField
+                      control={form.control}
+                      name="dateOfBirth"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Date of Birth</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "PPP")
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-auto p-0"
+                              align="start"
+                            >
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                initialFocus
+                                fromYear={1900}
+                                toYear={new Date().getFullYear()}
+                                captionLayout="dropdown-buttons"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Joining Date */}
+                    <FormField
+                      control={form.control}
+                      name="joiningDate"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Joining Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "PPP")
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-auto p-0"
+                              align="start"
+                            >
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={(date) => {
+                                  field.onChange(date);
+                                  // Update next bill date when joining date changes
+                                  const selectedPlan = membershipPlans.find(
+                                    (plan) =>
+                                      plan.id ===
+                                      form.getValues("membershipPlanId")
+                                  );
+                                  if (selectedPlan && date) {
+                                    const nextBillDate = new Date(date);
+                                    nextBillDate.setMonth(
+                                      nextBillDate.getMonth() +
+                                        selectedPlan.durationMonths
+                                    );
+                                    form.setValue("nextBillDate", nextBillDate);
+                                  }
+                                }}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Address */}
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                          <FormLabel>Address</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Enter member's address"
+                              {...field}
+                              value={field.value ?? ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Membership Type with Payment Date */}
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="membershipPlanId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Membership Type</FormLabel>
+                            <Select
+                              onValueChange={handleMembershipChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a membership plan" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {isLoadingPlans ? (
+                                  <div className="flex justify-center p-2">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  </div>
+                                ) : membershipPlans.length === 0 ? (
+                                  <div className="p-2 text-sm text-muted-foreground">
+                                    No membership plans found
+                                  </div>
+                                ) : (
+                                  // Only show active plans
+                                  membershipPlans
+                                    .filter((plan) => plan.isActive !== false)
+                                    .map((plan) => (
+                                      <SelectItem key={plan.id} value={plan.id}>
+                                        {plan.name} ({plan.durationMonths} Month
+                                        {plan.durationMonths > 1 ? "s" : ""}) -
+                                        ₹{Math.round(plan.price)}
+                                      </SelectItem>
+                                    ))
+                                )}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Payment Date Display */}
+                      <div className="rounded-md border p-4">
+                        <div className="flex flex-col space-y-1">
+                          <span className="text-sm font-medium text-muted-foreground">
+                            Next Billing Date
+                          </span>
+                          <span className="text-sm">
+                            {form.watch("nextBillDate") &&
+                            form.watch("joiningDate") &&
+                            form.watch("membershipPlanId")
+                              ? format(
+                                  form.watch("nextBillDate") as Date,
+                                  "PPP"
+                                )
+                              : "Select membership plan and joining date to see next billing date"}
+                          </span>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Payment Status */}
+                    <FormField
+                      control={form.control}
+                      name="isPaid"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                          <FormControl>
+                            <Checkbox
+                              key={checkboxKey}
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Payment Status</FormLabel>
+                            <p className="text-sm text-muted-foreground">
+                              {field.value ? "Paid" : "Not Paid"}
+                            </p>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
-                  {/* Payment Status */}
-                  <FormField
-                    control={form.control}
-                    name="isPaid"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                        <FormControl>
-                          <Checkbox
-                            key={checkboxKey}
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>Payment Status</FormLabel>
-                          <p className="text-sm text-muted-foreground">
-                            {field.value ? "Paid" : "Not Paid"}
-                          </p>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="mt-8 flex justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="mr-3"
-                    onClick={handleCancel}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={
-                      (isEditMode ? updateMemberMutation.isPending : addMemberMutation.isPending) || 
-                      !form.formState.isValid
-                    }
-                  >
-                    {(isEditMode ? updateMemberMutation.isPending : addMemberMutation.isPending) && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    {isEditMode ? "Save Changes" : "Add Member"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+                  <div className="mt-8 flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mr-3"
+                      onClick={handleCancel}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={
+                        (isEditMode
+                          ? updateMemberMutation.isPending
+                          : addMemberMutation.isPending) ||
+                        !form.formState.isValid
+                      }
+                    >
+                      {(isEditMode
+                        ? updateMemberMutation.isPending
+                        : addMemberMutation.isPending) && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      {isEditMode ? "Save Changes" : "Add Member"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
         )}
       </div>
     </AppLayout>

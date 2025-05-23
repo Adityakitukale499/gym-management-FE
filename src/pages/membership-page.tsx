@@ -6,7 +6,7 @@ import {
   getMembershipPlans,
   addMembershipPlan,
   updateMembershipPlan,
-  FIRESTORE_COLLECTIONS
+  FIRESTORE_COLLECTIONS,
 } from "@/lib/firestore";
 import { useToast } from "@/hooks/use-toast";
 import AppLayout from "@/components/layout/app-layout";
@@ -58,14 +58,17 @@ export default function MembershipPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [planToToggle, setPlanToToggle] = useState<{id: string, currentStatus: boolean} | null>(null);
+  const [planToToggle, setPlanToToggle] = useState<{
+    id: string;
+    currentStatus: boolean;
+  } | null>(null);
 
   const fetchPlans = async () => {
     if (!user?.id) return;
 
     setLoading(true);
     try {
-      const plansData = await getMembershipPlans(user.id);
+      const plansData = await getMembershipPlans();
       setPlans(plansData);
     } catch (err: any) {
       toast({
@@ -250,36 +253,56 @@ export default function MembershipPage() {
                       <TableCell>
                         <div className="flex items-center">
                           <div className="mr-2">
-                            <div 
-                              className={`h-3 w-3 rounded-full ${plan.isActive !== false ? 'bg-green-500' : 'bg-red-400'}`}
+                            <div
+                              className={`h-3 w-3 rounded-full ${
+                                plan.isActive !== false
+                                  ? "bg-green-500"
+                                  : "bg-red-400"
+                              }`}
                             ></div>
                           </div>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button 
-                                variant={plan.isActive !== false ? "outline" : "secondary"} 
+                              <Button
+                                variant={
+                                  plan.isActive !== false
+                                    ? "outline"
+                                    : "secondary"
+                                }
                                 size="sm"
                               >
-                                {plan.isActive !== false ? "Active" : "Inactive"}
+                                {plan.isActive !== false
+                                  ? "Active"
+                                  : "Inactive"}
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>
-                                  {plan.isActive !== false ? "Deactivate" : "Activate"} plan?
+                                  {plan.isActive !== false
+                                    ? "Deactivate"
+                                    : "Activate"}{" "}
+                                  plan?
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  {plan.isActive !== false 
-                                    ? "This plan will no longer be available for  members." 
+                                  {plan.isActive !== false
+                                    ? "This plan will no longer be available for  members."
                                     : "This plan will become available for members."}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => toggleActive(plan.id, plan.isActive !== false)}
+                                  onClick={() =>
+                                    toggleActive(
+                                      plan.id,
+                                      plan.isActive !== false
+                                    )
+                                  }
                                 >
-                                  {plan.isActive !== false ? "Deactivate" : "Activate"}
+                                  {plan.isActive !== false
+                                    ? "Deactivate"
+                                    : "Activate"}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>

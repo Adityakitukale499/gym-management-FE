@@ -127,24 +127,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutate: async (data: Omit<Gym, "id" | "createdAt">) => {
       try {
         setIsRegisterPending(true);
-        // Create user in Firebase Auth
-        const userCredential = await createUserWithEmailAndPassword(
-          auth,
-          data.email,
-          data.password
-        );
 
-        // Create gym document in Firestore
-        const gymData: Gym = {
-          ...data,
-          id: userCredential.user.uid,
-          createdAt: new Date(),
-        };
-
-        await setDoc(doc(db, "gyms", userCredential.user.uid), {
-          ...gymData,
-          createdAt: serverTimestamp(),
-        });
+        await createUserWithEmailAndPassword(auth, data.email, data.password);
 
         toast({
           title: "Registration successful",

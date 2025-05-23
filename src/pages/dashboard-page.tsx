@@ -18,6 +18,7 @@ export default function DashboardPage() {
     useExpiringMembers();
 
   const handleViewMember = (member: Member) => {
+    console.log({ member });
     setSelectedMember(member);
     setIsModalOpen(true);
   };

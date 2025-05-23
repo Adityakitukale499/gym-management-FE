@@ -45,6 +45,11 @@ export default function MobileMenu() {
       href: "/whatsapp",
       icon: PhoneCall,
     },
+    {
+      name: "Trainer",
+      href: "/register",
+      icon: PhoneCall,
+    },
   ];
 
   const handleLogout = () => {

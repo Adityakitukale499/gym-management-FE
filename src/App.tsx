@@ -12,6 +12,7 @@ import MembershipPage from "@/pages/membership-page";
 import AddMemberPage from "@/pages/add-member-page";
 import FestivalPage from "@/pages/festival";
 import WhatsAppLogin from "./pages/whatsapp";
+import RegisterForm from "./components/auth/register-form";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <ProtectedRoute path="/add-member" component={AddMemberPage} />
       <ProtectedRoute path="/festival" component={FestivalPage} />
       <ProtectedRoute path="/whatsapp" component={() => <WhatsAppLogin />} />
+      <ProtectedRoute path="/register" component={() => <RegisterForm />} />
       <Route component={NotFound} />
     </Switch>
   );
