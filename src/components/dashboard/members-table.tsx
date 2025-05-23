@@ -78,7 +78,7 @@ export default function MembersTable({ onViewMember }: MembersTableProps) {
       } else if (filter === "inactive") {
         filtered = filtered.filter((m) => !m.isActive);
       } else if (filter === "Not Paid") {
-        filtered = filtered.filter((m) => !m.isPaid);
+        filtered = filtered.filter((m) => !m.isPaid && m.isActive);
       }
 
       setMembers(filtered);
