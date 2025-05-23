@@ -14,7 +14,7 @@ import {
   confirmPasswordReset,
   ActionCodeSettings,
 } from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { getDocs, collection } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Gym } from "@shared/schema";
@@ -58,13 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Listen for auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        // Get gym data from Firestore
-        const gymDoc = await getDoc(doc(db, "gyms", firebaseUser.uid));
-        if (gymDoc.exists()) {
-          setUser(gymDoc.data() as Gym);
-        }
+    const unsubscribe = onAuthStateChanged(auth, async () => {
+      const gymsSnapshot = await getDocs(collection(db, "gyms"));
+
+      if (!gymsSnapshot.empty) {
+        const firstGym = gymsSnapshot.docs[0].data() as Gym;
+        setUser(firstGym);
       } else {
         setUser(null);
       }
