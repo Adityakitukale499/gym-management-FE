@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import io from "socket.io-client";
+import AppLayout from "@/components/layout/app-layout";
+import { Loader2 } from "lucide-react";
 
 const socket = io("https://gym-script.onrender.com");
 
@@ -68,40 +70,60 @@ const WhatsAppLogin: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center" }}>
-        <p>Loading...</p>
-      </div>
+      <AppLayout>
+        <div className="flex items-center justify-center h-[70vh]">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-lg font-medium">Connecting to WhatsApp...</p>
+          </div>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div style={{ textAlign: "center", padding: "20px" }}>
-      {alert && (
-        <div
-          style={{
-            padding: "10px",
-            backgroundColor: loggedIn ? "#d4edda" : "#f8d7da",
-            color: loggedIn ? "#155724" : "#721c24",
-            borderRadius: "4px",
-            marginBottom: "20px",
-          }}
-        >
-          {alert}
-        </div>
-      )}
-      {loggedIn ? (
-        <h2>✅ WhatsApp is Connected</h2>
-      ) : (
-        <>
-          <h2>Scan QR Code to Login to WhatsApp</h2>
-          {qr ? (
-            <img src={qr} alt="QR Code" style={{ maxWidth: "300px" }} />
-          ) : (
-            <p>Generating QR code...</p>
-          )}
-        </>
-      )}
-    </div>
+    <AppLayout>
+      <div className="flex flex-col items-center justify-center min-h-[70vh] p-6">
+        {alert && (
+          <div
+            className={`w-full max-w-md p-4 mb-8 rounded-md ${
+              loggedIn ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+            }`}
+          >
+            {alert}
+          </div>
+        )}
+        
+        {loggedIn ? (
+          <div className="text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold mb-2">WhatsApp is Connected</h2>
+            <p className="text-gray-600">Your WhatsApp is now ready to send messages</p>
+          </div>
+        ) : (
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-6">Scan QR Code to Login to WhatsApp</h2>
+            <div className="border-2 border-gray-200 rounded-lg p-4 inline-block">
+              {qr ? (
+                <img src={qr} alt="QR Code" className="max-w-xs mx-auto" />
+              ) : (
+                <div className="w-64 h-64 flex flex-col items-center justify-center bg-gray-50">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                  <p className="text-gray-600">Generating QR code...</p>
+                </div>
+              )}
+            </div>
+            <p className="mt-4 text-gray-600">
+              Open WhatsApp on your phone, tap Menu and select WhatsApp Web
+            </p>
+          </div>
+        )}
+      </div>
+    </AppLayout>
   );
 };
 

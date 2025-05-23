@@ -317,6 +317,36 @@ export default function AddMemberPage() {
     navigate("/");
   };
 
+  // Function to send WhatsApp welcome message
+  const sendWelcomeWhatsApp = async (phone: string, name: string) => {
+    try {
+      const welcomeMessage = `Hey ${name}! 👋 Welcome to the Royal Gym family in Mauda! 🏋️‍♂️ We're thrilled to have you with us. Let's crush those fitness goals together. 💪 If you need anything, we’re just a message away! 🔥`;
+      const response = await fetch('https://gym-script.onrender.com/send-whatsapp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone,
+          message: welcomeMessage,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({
+          title: "Welcome message sent",
+          description: "A welcome message has been sent to the member's WhatsApp.",
+        });
+      } else {
+        console.error("Failed to send WhatsApp message:", data.error);
+      }
+    } catch (error) {
+      console.error("Error sending WhatsApp welcome message:", error);
+    }
+  };
+
   // Add member mutation
   const addMemberMutation = useMutation({
     mutationFn: async (data: InsertMember) => {
@@ -325,11 +355,15 @@ export default function AddMemberPage() {
         gymId: user?.id,
       });
     },
-    onSuccess: () => {
+    onSuccess: (result, variables) => {
       toast({
         title: "Member added",
         description: "The new member has been added successfully.",
       });
+      
+      // Send welcome WhatsApp message
+      sendWelcomeWhatsApp(variables.phone, variables.name);
+      
       // Reset form with all fields including membership type and payment date
       handleCancel();
       // Invalidate relevant queries
