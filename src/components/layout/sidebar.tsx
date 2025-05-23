@@ -40,6 +40,11 @@ export default function Sidebar() {
       href: "/whatsapp",
       icon: PhoneCall,
     },
+    {
+      name: "Trainer",
+      href: "/register",
+      icon: PhoneCall,
+    },
   ];
 
   const handleLogout = () => {

@@ -103,7 +103,10 @@ export default function MemberDetailsModal({
           "MEMBERSHIP_PLANS",
           String(member.membershipPlanId)
         );
+        console.log({ planId: member.membershipPlanId });
         const planSnap = await getDoc(planRef);
+
+        console.log({ planSnap });
 
         if (planSnap.exists()) {
           const data = planSnap.data();

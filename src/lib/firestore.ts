@@ -44,9 +44,9 @@ export const addMember = async (memberData: DocumentData) => {
   return { id: docRef.id, ...memberData };
 };
 
-export const getMembers = async (gymId: string, filters: any = {}) => {
+export const getMembers = async (filters: any = {}) => {
   const membersRef = collection(db, FIRESTORE_COLLECTIONS.MEMBERS);
-  let q = query(membersRef, where("gymId", "==", gymId));
+  let q = query(membersRef);
 
   if (filters.name) {
     q = query(
@@ -96,18 +96,21 @@ export const addMembershipPlan = async (data: Omit<MembershipPlan, "id">) => {
   return docRef.id;
 };
 
-export const getMembershipPlans = async (gymId: string) => {
+export const getMembershipPlans = async () => {
   const plansRef = collection(db, FIRESTORE_COLLECTIONS.MEMBERSHIP_PLANS);
-  const q = query(plansRef, where("gymId", "==", gymId));
+  const q = query(plansRef);
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map(doc => ({
+  return snapshot.docs.map((doc) => ({
     id: doc.id,
-    ...doc.data()
+    ...doc.data(),
   })) as MembershipPlan[];
 };
 
-export const updateMembershipPlan = async (id: string, data: Partial<MembershipPlan>) => {
+export const updateMembershipPlan = async (
+  id: string,
+  data: Partial<MembershipPlan>
+) => {
   const planRef = doc(db, FIRESTORE_COLLECTIONS.MEMBERSHIP_PLANS, id);
   await updateDoc(planRef, {
     ...data,
