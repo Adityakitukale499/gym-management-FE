@@ -12,6 +12,8 @@ const WhatsAppLogin: React.FC = () => {
   const [alert, setAlert] = useState<string | null>(null);
 
   useEffect(() => {
+    const socketInstance = io("https://gym-script.onrender.com");
+
     const checkStatus = async () => {
       try {
         const res = await fetch("https://gym-script.onrender.com/status");
@@ -29,14 +31,14 @@ const WhatsAppLogin: React.FC = () => {
 
     checkStatus();
 
-    socket.on("qr", (qrData: string) => {
+    socketInstance.on("qr", (qrData: string) => {
       setQr(qrData);
       setLoggedIn(false);
       setLoading(false);
       setAlert("Please scan the QR code to login.");
     });
 
-    socket.on("ready", () => {
+    socketInstance.on("ready", () => {
       setLoggedIn(true);
       setQr(null);
       setLoading(false);
@@ -44,14 +46,14 @@ const WhatsAppLogin: React.FC = () => {
       setTimeout(() => setAlert(null), 3000);
     });
 
-    socket.on("disconnected", () => {
+    socketInstance.on("disconnected", () => {
       setLoggedIn(false);
       setQr(null);
       setLoading(false);
       setAlert("WhatsApp disconnected. Please scan QR code to reconnect.");
     });
 
-    socket.on("auth_failure", (msg: string) => {
+    socketInstance.on("auth_failure", (msg: string) => {
       setLoggedIn(false);
       setQr(null);
       setLoading(false);
@@ -61,10 +63,9 @@ const WhatsAppLogin: React.FC = () => {
     });
 
     return () => {
-      socket.off("qr");
-      socket.off("ready");
-      socket.off("disconnected");
-      socket.off("auth_failure");
+      if (socketInstance) {
+        socketInstance.disconnect();
+      }
     };
   }, []);
 
@@ -87,26 +88,43 @@ const WhatsAppLogin: React.FC = () => {
         {alert && (
           <div
             className={`w-full max-w-md p-4 mb-8 rounded-md ${
-              loggedIn ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+              loggedIn
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
             }`}
           >
             {alert}
           </div>
         )}
-        
+
         {loggedIn ? (
           <div className="text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-8 h-8 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
             <h2 className="text-2xl font-bold mb-2">WhatsApp is Connected</h2>
-            <p className="text-gray-600">Your WhatsApp is now ready to send messages</p>
+            <p className="text-gray-600">
+              Your WhatsApp is now ready to send messages
+            </p>
           </div>
         ) : (
           <div className="text-center">
-            <h2 className="text-2xl font-bold mb-6">Scan QR Code to Login to WhatsApp</h2>
+            <h2 className="text-2xl font-bold mb-6">
+              Scan QR Code to Login to WhatsApp
+            </h2>
             <div className="border-2 border-gray-200 rounded-lg p-4 inline-block">
               {qr ? (
                 <img src={qr} alt="QR Code" className="max-w-xs mx-auto" />

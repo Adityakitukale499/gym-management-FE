@@ -14,10 +14,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Loader2, MessageSquare, Pencil } from "lucide-react";
-import { doc, getDoc } from "firebase/firestore";
+import { Loader2, Pencil } from "lucide-react";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useLocation } from "wouter";
+import { FIRESTORE_COLLECTIONS } from "@/lib/firestore";
 
 interface MemberDetailsModalProps {
   member: Member | null;
@@ -31,7 +32,7 @@ export default function MemberDetailsModal({
   onOpenChange,
 }: MemberDetailsModalProps) {
   const { toast } = useToast();
-  const [isActive, setIsActive] = useState(member?.isActive || false);
+  const [isActive, setIsActive] = useState(member?.isActive ?? false);
   const [membershipPlan, setMembershipPlan] = useState<{
     name: string;
     durationMonths: number;
@@ -68,13 +69,33 @@ export default function MemberDetailsModal({
   });
 
   // Handle status toggle
-  const handleStatusChange = (checked: boolean) => {
+  const handleStatusChange = async (checked: boolean) => {
     if (!member) return;
-    setIsActive(checked);
-    updateStatusMutation.mutate({
-      id: member.id,
-      isActive: checked,
-    });
+    try {
+      const memberRef = doc(
+        db,
+        FIRESTORE_COLLECTIONS.MEMBERS,
+        String(member.id)
+      );
+      await updateDoc(memberRef, {
+        isActive: checked,
+      });
+      setIsActive(checked);
+
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      toast({
+        title: "Status updated",
+        description: `Member is now ${checked ? "active" : "inactive"}`,
+      });
+    } catch (error) {
+      console.error("Error updating member status:", error);
+      toast({
+        title: "Failed to update status",
+        description: "There was an error updating the member's status.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Reset active state when modal opens with a new member
@@ -91,6 +112,7 @@ export default function MemberDetailsModal({
   // Fetch membership plan from Firestore
   useEffect(() => {
     const fetchMembershipPlan = async () => {
+      console.log({ member });
       if (!member?.membershipPlanId) {
         setMembershipPlan(null);
         return;
@@ -100,13 +122,11 @@ export default function MemberDetailsModal({
       try {
         const planRef = doc(
           db,
-          "MEMBERSHIP_PLANS",
+          FIRESTORE_COLLECTIONS.MEMBERSHIP_PLANS,
           String(member.membershipPlanId)
         );
         console.log({ planId: member.membershipPlanId });
         const planSnap = await getDoc(planRef);
-
-        console.log({ planSnap });
 
         if (planSnap.exists()) {
           const data = planSnap.data();
@@ -238,7 +258,6 @@ export default function MemberDetailsModal({
         </div>
 
         <DialogFooter>
-          
           <Button className="gap-2" onClick={handleEditMember}>
             <Pencil className="h-4 w-4" />
             Edit Member

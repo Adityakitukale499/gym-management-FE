@@ -48,6 +48,7 @@ import { useLocation } from "wouter";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { DocumentData } from "firebase/firestore";
+import { Switch } from "@/components/ui/switch";
 
 // Extend the schema for form validation
 const formSchema = insertMemberSchema
@@ -65,7 +66,14 @@ const formSchema = insertMemberSchema
       required_error: "Date of birth is required",
     }),
     name: z.string().min(1, "Name is required"),
-    phone: z.string().min(1, "Phone number is required"),
+    phone: z
+      .string()
+      .min(1, "Phone number is required")
+      .refine((val) => {
+        // Remove +91 if present for validation
+        const number = val.replace("+91", "").trim();
+        return number.length === 10 && /^[0-9]+$/.test(number);
+      }, "Phone number must be 10 digits"),
     address: z.string().min(1, "Address is required"),
     isActive: z.boolean(),
     isPaid: z.boolean(),
@@ -105,24 +113,14 @@ export default function AddMemberPage() {
     mode: "onChange",
   });
 
-  // Parse URL parameters to check for edit mode
   useEffect(() => {
-    // Get URL search params directly from the window location to handle browser refresh
     const urlSearchParams = new URLSearchParams(window.location.search);
     const id = urlSearchParams.get("id");
     const mode = urlSearchParams.get("mode");
 
-    console.log("URL params parsed from window.location:", {
-      id,
-      mode,
-      search: window.location.search,
-    });
-    console.log("URL params from useLocation:", { location });
-
     if (id && mode === "edit") {
       setIsEditMode(true);
       setMemberId(id);
-      console.log("Edit mode enabled for member ID:", id);
     }
   }, [location]);
 
@@ -131,16 +129,9 @@ export default function AddMemberPage() {
     const fetchMemberData = async () => {
       if (!memberId || !user?.id) return;
 
-      // Log all collections for debugging
-      console.log("Firestore collections:", FIRESTORE_COLLECTIONS);
-      console.log("Members collection:", FIRESTORE_COLLECTIONS.MEMBERS);
-      console.log("Attempting to fetch member data for ID:", memberId);
-
       setIsLoading(true);
       try {
-        // First try with "members" collection
-        const memberRef = doc(db, "members", memberId);
-        console.log("Trying path:", memberRef.path);
+        const memberRef = doc(db, FIRESTORE_COLLECTIONS.MEMBERS, memberId);
 
         let memberSnap = await getDoc(memberRef);
         let memberData: DocumentData | undefined;
@@ -149,30 +140,18 @@ export default function AddMemberPage() {
           console.log(
             "Document not found in 'members' collection, trying 'MEMBERS'"
           );
-          // If not found, try with uppercase 'MEMBERS'
-          const memberRefUpper = doc(db, "MEMBERS", memberId);
-          memberSnap = await getDoc(memberRefUpper);
         }
-
-        console.log("Document exists:", memberSnap.exists());
 
         if (memberSnap.exists()) {
           memberData = memberSnap.data();
-          console.log("Member data fetched:", memberData);
 
-          // Convert string dates to Date objects for form
           const joiningDate = parseDate(memberData?.joiningDate);
           const nextBillDate = parseDate(memberData?.nextBillDate);
           const dateOfBirth = parseDate(memberData?.dateOfBirth);
 
-          // Force a redraw of the form with the new values
           setFormKey((prev) => prev + 1);
 
-          // Use timeout to ensure React has time to process
           setTimeout(() => {
-            console.log("Setting form values for member:", memberData?.name);
-
-            // Set individual field values
             form.setValue("name", memberData?.name || "");
             form.setValue("phone", memberData?.phone || "");
             form.setValue("address", memberData?.address || "");
@@ -189,17 +168,14 @@ export default function AddMemberPage() {
             if (memberData?.membershipPlanId) {
               form.setValue(
                 "membershipPlanId",
-                String(memberData?.membershipPlanId)
+                String(memberData.membershipPlanId)
               );
             }
 
-            // Set photo preview if exists
             if (memberData?.photo) {
               setPhotoPreview(memberData?.photo);
               setIsPhotoUploaded(true);
             }
-
-            console.log("Form values set:", form.getValues());
           }, 100);
         } else {
           toast({
@@ -262,7 +238,10 @@ export default function AddMemberPage() {
   });
 
   const handleMembershipChange = (value: string) => {
-    form.setValue("membershipPlanId", value);
+    form.setValue("membershipPlanId", value, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
 
     const selectedPlan = membershipPlans.find((plan) => plan.id === value);
     if (selectedPlan) {
@@ -271,7 +250,10 @@ export default function AddMemberPage() {
       nextBillDate.setMonth(
         nextBillDate.getMonth() + selectedPlan.durationMonths
       );
-      form.setValue("nextBillDate", nextBillDate);
+      form.setValue("nextBillDate", nextBillDate, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
     }
   };
 
@@ -367,29 +349,25 @@ export default function AddMemberPage() {
     }
   };
 
-  // Add member mutation
   const addMemberMutation = useMutation({
     mutationFn: async (data: InsertMember) => {
-      console.log({ data });
       return addMember({
         ...data,
         gymId: user?.id,
       });
     },
-    onSuccess: (result, variables) => {
+    onSuccess: (_, variables) => {
       toast({
         title: "Member added",
         description: "The new member has been added successfully.",
       });
 
-      // Send welcome WhatsApp message
       sendWelcomeWhatsApp(variables.phone, variables.name);
 
-      // Reset form with all fields including membership type and payment date
       handleCancel();
-      // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["members"] });
-      // Navigate to home page
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["membershipPlans"] });
       navigate("/");
     },
     onError: (error) => {
@@ -418,8 +396,10 @@ export default function AddMemberPage() {
         title: "Member updated",
         description: "The member has been updated successfully.",
       });
-      // Invalidate relevant queries
+
       queryClient.invalidateQueries({ queryKey: ["members"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["membershipPlans"] });
 
       // Navigate back to dashboard
       navigate("/");
@@ -447,9 +427,7 @@ export default function AddMemberPage() {
         : format(values.joiningDate, "yyyy-MM-dd"),
       isActive: values.isActive,
       isPaid: values.isPaid,
-      membershipPlanId: values.membershipPlanId
-        ? parseInt(values.membershipPlanId)
-        : undefined,
+      membershipPlanId: values.membershipPlanId || "",
     };
 
     if (isEditMode && memberId) {
@@ -606,8 +584,16 @@ export default function AddMemberPage() {
                           <FormLabel>Phone Number</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="e.g. +91 9876543210"
+                              placeholder="e.g. 7066994198"
                               {...field}
+                              onChange={(e) => {
+                                const value = e.target.value
+                                  .replace("+91", "")
+                                  .trim();
+                                if (value.length <= 10) {
+                                  field.onChange("+91" + value);
+                                }
+                              }}
                             />
                           </FormControl>
                           <FormMessage />
@@ -646,13 +632,12 @@ export default function AddMemberPage() {
                               align="start"
                             >
                               <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                                fromYear={1900}
-                                toYear={new Date().getFullYear()}
-                                captionLayout="dropdown-buttons"
+                                value={field.value}
+                                onChange={(value) =>
+                                  field.onChange(value as Date)
+                                }
+                                minDate={new Date(1900, 0, 1)}
+                                maxDate={new Date()}
                               />
                             </PopoverContent>
                           </Popover>
@@ -692,11 +677,10 @@ export default function AddMemberPage() {
                               align="start"
                             >
                               <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={(date) => {
+                                value={field.value}
+                                onChange={(value) => {
+                                  const date = value as Date;
                                   field.onChange(date);
-                                  // Update next bill date when joining date changes
                                   const selectedPlan = membershipPlans.find(
                                     (plan) =>
                                       plan.id ===
@@ -711,7 +695,6 @@ export default function AddMemberPage() {
                                     form.setValue("nextBillDate", nextBillDate);
                                   }
                                 }}
-                                initialFocus
                               />
                             </PopoverContent>
                           </Popover>
@@ -740,69 +723,88 @@ export default function AddMemberPage() {
                     />
 
                     {/* Membership Type with Payment Date */}
-                    <div className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="membershipPlanId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Membership Type</FormLabel>
-                            <Select
-                              onValueChange={handleMembershipChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select a membership plan" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {isLoadingPlans ? (
-                                  <div className="flex justify-center p-2">
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  </div>
-                                ) : membershipPlans.length === 0 ? (
-                                  <div className="p-2 text-sm text-muted-foreground">
-                                    No membership plans found
-                                  </div>
-                                ) : (
-                                  // Only show active plans
-                                  membershipPlans
-                                    .filter((plan) => plan.isActive !== false)
-                                    .map((plan) => (
-                                      <SelectItem key={plan.id} value={plan.id}>
-                                        {plan.name} ({plan.durationMonths} Month
-                                        {plan.durationMonths > 1 ? "s" : ""}) -
-                                        ₹{Math.round(plan.price)}
-                                      </SelectItem>
-                                    ))
-                                )}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    {/* <div className="space-y-4"> */}
+                    <FormField
+                      control={form.control}
+                      name="membershipPlanId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Membership Type</FormLabel>
+                          <Select
+                            onValueChange={handleMembershipChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a membership plan" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {isLoadingPlans ? (
+                                <div className="flex justify-center p-2">
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                </div>
+                              ) : membershipPlans.length === 0 ? (
+                                <div className="p-2 text-sm text-muted-foreground">
+                                  No membership plans found
+                                </div>
+                              ) : (
+                                // Only show active plans
+                                membershipPlans
+                                  .filter((plan) => plan.isActive !== false)
+                                  .map((plan) => (
+                                    <SelectItem key={plan.id} value={plan.id}>
+                                      {plan.name} ({plan.durationMonths} Month
+                                      {plan.durationMonths > 1 ? "s" : ""}) - ₹
+                                      {Math.round(plan.price)}
+                                    </SelectItem>
+                                  ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                      {/* Payment Date Display */}
-                      <div className="rounded-md border p-4">
-                        <div className="flex flex-col space-y-1">
-                          <span className="text-sm font-medium text-muted-foreground">
-                            Next Billing Date
-                          </span>
-                          <span className="text-sm">
-                            {form.watch("nextBillDate") &&
-                            form.watch("joiningDate") &&
-                            form.watch("membershipPlanId")
-                              ? format(
-                                  form.watch("nextBillDate") as Date,
-                                  "PPP"
-                                )
-                              : "Select membership plan and joining date to see next billing date"}
-                          </span>
-                        </div>
+                    {/* Payment Date Display */}
+                    <div className="rounded-md border p-4">
+                      <div className="flex flex-col space-y-1">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Next Billing Date
+                        </span>
+                        <span className="text-sm">
+                          {form.watch("nextBillDate") &&
+                          form.watch("joiningDate") &&
+                          form.watch("membershipPlanId")
+                            ? format(form.watch("nextBillDate") as Date, "PPP")
+                            : "Select membership plan and joining date to see next billing date"}
+                        </span>
                       </div>
                     </div>
+                    {/* </div> */}
+
+                    {/* Active Status */}
+                    <FormField
+                      control={form.control}
+                      name="isActive"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Member Status</FormLabel>
+                            <p className="text-sm text-muted-foreground">
+                              {field.value ? "Active" : "Inactive"}
+                            </p>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
 
                     {/* Payment Status */}
                     <FormField
@@ -843,7 +845,7 @@ export default function AddMemberPage() {
                         (isEditMode
                           ? updateMemberMutation.isPending
                           : addMemberMutation.isPending) ||
-                        !form.formState.isValid
+                        (!form.formState.isDirty && isEditMode)
                       }
                     >
                       {(isEditMode

@@ -47,9 +47,7 @@ export const members = pgTable("members", {
   nextBillDate: date("next_bill_date").notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   isPaid: boolean("is_paid").default(true).notNull(),
-  membershipPlanId: integer("membership_plan_id").references(
-    () => membershipPlans.id
-  ),
+  membershipPlanId: text("membership_plan_id").notNull(),
   gymId: text("gym_id")
     .notNull()
     .references(() => gyms.id, { onDelete: "cascade" }),

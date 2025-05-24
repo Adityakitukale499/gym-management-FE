@@ -18,6 +18,7 @@ import { getDocs, collection } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Gym } from "@shared/schema";
+import { FIRESTORE_COLLECTIONS } from "@/lib/firestore";
 
 type AuthContextType = {
   user: Gym | null;
@@ -56,14 +57,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isForgotPasswordPending, setIsForgotPasswordPending] = useState(false);
   const [isResetPasswordPending, setIsResetPasswordPending] = useState(false);
 
-  // Listen for auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async () => {
-      const gymsSnapshot = await getDocs(collection(db, "gyms"));
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const gymsSnapshot = await getDocs(
+          collection(db, FIRESTORE_COLLECTIONS.GYMS)
+        );
 
-      if (!gymsSnapshot.empty) {
-        const firstGym = gymsSnapshot.docs[0].data() as Gym;
-        setUser(firstGym);
+        if (!gymsSnapshot.empty) {
+          const firstGym = gymsSnapshot.docs[0].data() as Gym;
+          setUser(firstGym);
+        } else {
+          setUser(null);
+        }
       } else {
         setUser(null);
       }
@@ -73,7 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  // Add automatic logout after 24 hours
   useEffect(() => {
     if (user) {
       const loginTime = new Date().getTime();
@@ -91,7 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       };
 
-      // Check every minute
       const intervalId = setInterval(checkSession, 60000);
 
       return () => clearInterval(intervalId);

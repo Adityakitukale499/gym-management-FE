@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { deleteDoc, doc, getDoc } from "firebase/firestore";
 import {
   getMembershipPlans,
   addMembershipPlan,
   updateMembershipPlan,
-  FIRESTORE_COLLECTIONS,
 } from "@/lib/firestore";
 import { useToast } from "@/hooks/use-toast";
 import AppLayout from "@/components/layout/app-layout";
@@ -38,7 +35,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Pencil, Loader2 } from "lucide-react";
 
 interface MembershipPlan {
   id: string;
@@ -58,10 +55,6 @@ export default function MembershipPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [planToToggle, setPlanToToggle] = useState<{
-    id: string;
-    currentStatus: boolean;
-  } | null>(null);
 
   const fetchPlans = async () => {
     if (!user?.id) return;
@@ -130,43 +123,6 @@ export default function MembershipPage() {
       });
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!user?.id) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to delete plans",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const planRef = doc(db, FIRESTORE_COLLECTIONS.MEMBERSHIP_PLANS, id);
-      const planDoc = await getDoc(planRef);
-
-      if (planDoc.exists() && planDoc.data().gymId === user.id) {
-        await deleteDoc(planRef);
-        toast({
-          title: "Deleted",
-          description: "Plan deleted successfully",
-        });
-        fetchPlans();
-      } else {
-        toast({
-          title: "Error",
-          description: "You don't have permission to delete this plan",
-          variant: "destructive",
-        });
-      }
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: `Failed to delete plan: ${err.message}`,
-        variant: "destructive",
-      });
     }
   };
 

@@ -30,6 +30,7 @@ import { format } from "date-fns";
 import { Loader2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { JSX } from "react/jsx-runtime";
+import { FIRESTORE_COLLECTIONS } from "@/lib/firestore";
 
 interface MembersTableProps {
   onViewMember: (member: Member) => void;
@@ -47,7 +48,7 @@ export default function MembersTable({ onViewMember }: MembersTableProps) {
     setLoading(true);
     try {
       const q = query(
-        collection(db, "members"),
+        collection(db, FIRESTORE_COLLECTIONS.MEMBERS),
         orderBy("joiningDate", "desc")
       );
       const snapshot = await getDocs(q);
