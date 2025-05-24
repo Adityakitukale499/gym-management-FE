@@ -45,6 +45,12 @@ type AuthContextType = {
   };
 };
 
+interface UserData {
+  email: string;
+  username: string;
+  password: string;
+}
+
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -127,15 +133,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const registerMutation = {
-    mutate: async (data: Omit<Gym, "id" | "createdAt">) => {
+    mutate: async (data: UserData) => {
       try {
         setIsRegisterPending(true);
 
         await createUserWithEmailAndPassword(auth, data.email, data.password);
 
         toast({
-          title: "Registration successful",
-          description: `Welcome to Gym Management System, ${data.gymName}!`,
+          title: "Trainer Registration successful",
+          description: `Welcome to Gym Management System`,
         });
       } catch (error) {
         toast({

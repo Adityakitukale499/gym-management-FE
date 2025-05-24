@@ -23,7 +23,7 @@ function Router() {
       <ProtectedRoute path="/add-member" component={AddMemberPage} />
       <ProtectedRoute path="/festival" component={FestivalPage} />
       <ProtectedRoute path="/whatsapp" component={() => <WhatsAppLogin />} />
-      <ProtectedRoute path="/register" component={() => <RegisterForm />} />
+      <ProtectedRoute path="/trainer" component={() => <RegisterForm />} />
       <Route component={NotFound} />
     </Switch>
   );
