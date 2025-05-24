@@ -421,6 +421,7 @@ export default function AddMemberPage() {
       address: values.address,
       photo: values.photo,
       gymId: user?.id || "",
+      dateOfBirth: format(values.dateOfBirth, "yyyy-MM-dd"),
       joiningDate: format(values.joiningDate, "yyyy-MM-dd"),
       nextBillDate: values.nextBillDate
         ? format(values.nextBillDate, "yyyy-MM-dd")

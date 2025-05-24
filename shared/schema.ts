@@ -7,7 +7,6 @@ import {
   timestamp,
   date,
   real,
-  foreignKey,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -43,6 +42,7 @@ export const members = pgTable("members", {
   phone: text("phone").notNull(),
   address: text("address"),
   photo: text("photo"),
+  dateOfBirth: date("date_of_birth").notNull(),
   joiningDate: date("joining_date").notNull(),
   nextBillDate: date("next_bill_date").notNull(),
   isActive: boolean("is_active").default(true).notNull(),
