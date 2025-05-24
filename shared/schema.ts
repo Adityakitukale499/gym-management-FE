@@ -16,7 +16,7 @@ import { z } from "zod";
 export const gyms = pgTable("gyms", {
   id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
-  gymName: text("gym_name").notNull(),
+  gymName: text("gym_name"),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   photo: text("photo"),

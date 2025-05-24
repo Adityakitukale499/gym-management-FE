@@ -42,8 +42,8 @@ export default function Sidebar() {
     },
     {
       name: "Trainer",
-      href: "/register",
-      icon: PhoneCall,
+      href: "/trainer", 
+      icon: UserPlus,
     },
   ];
 

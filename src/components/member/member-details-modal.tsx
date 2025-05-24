@@ -238,10 +238,7 @@ export default function MemberDetailsModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" className="gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Send Message
-          </Button>
+          
           <Button className="gap-2" onClick={handleEditMember}>
             <Pencil className="h-4 w-4" />
             Edit Member

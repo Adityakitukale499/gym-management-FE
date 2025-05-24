@@ -48,7 +48,7 @@ export default function MobileMenu() {
     {
       name: "Trainer",
       href: "/register",
-      icon: PhoneCall,
+      icon: UserPlus,
     },
   ];
 
