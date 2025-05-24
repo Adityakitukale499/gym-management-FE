@@ -23,19 +23,19 @@ export default function ExpiringMembers({
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Expiring Soon</CardTitle>
-        <span className="text-sm text-gray-500">
+    <Card className="text-xs md:text-base">
+      <CardHeader className="flex flex-row items-center justify-between p-3 md:p-6">
+        <CardTitle className="text-base md:text-xl">Expiring Soon</CardTitle>
+        <span className="text-xs md:text-sm text-gray-500">
           Members with membership expiring within 3 days
         </span>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <CardContent className="p-3 md:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-4">
           {members.map((member) => (
             <div
               key={member.id}
-              className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+              className="border border-gray-200 rounded-lg p-2 md:p-4 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start">
                 {member.photo ? (
@@ -52,8 +52,8 @@ export default function ExpiringMembers({
                   </div>
                 )}
                 <div>
-                  <h3 className="font-medium text-gray-900">{member.name}</h3>
-                  <p className="text-sm text-gray-500">{member.phone}</p>
+                  <h3 className="font-medium text-gray-900 text-xs md:text-base">{member.name}</h3>
+                  <p className="text-xs md:text-sm text-gray-500">{member.phone}</p>
                   <div className="flex items-center mt-1">
                     <span className="text-xs font-medium text-red-600">
                       Expires:{" "}

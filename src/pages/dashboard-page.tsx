@@ -25,13 +25,8 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      <div className="p-6">
-        <header className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">
-            Overview of your gym's membership status
-          </p>
-        </header>
+      <div className="p-2 md:p-6 text-sm md:text-base">
+        
 
         {/* Dashboard Stats */}
         {isLoadingStats ? (

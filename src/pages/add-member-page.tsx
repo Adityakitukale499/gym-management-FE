@@ -440,30 +440,18 @@ export default function AddMemberPage() {
 
   return (
     <AppLayout>
-      <div className="p-6">
-        <header className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">
-            {isEditMode ? "Edit Member" : "Add New Member"}
-          </h1>
-          <p className="text-gray-600">
-            {isEditMode
-              ? "Update member information"
-              : "Register a new member to your gym"}
-          </p>
-        </header>
-
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {isEditMode ? "Edit Member Information" : "Member Information"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+      <div className="p-2 md:p-6 text-xs md:text-base">
+        <h1 className="text-lg md:text-2xl font-bold text-gray-900 mb-2 md:mb-6">{isEditMode ? "Edit Member" : "Add Member"}</h1>
+        <Card className="mb-4">
+          <CardHeader className="p-2 md:p-6">
+            <CardTitle className="text-base md:text-xl">{isEditMode ? "Edit Member Details" : "Add New Member"}</CardTitle>
+          </CardHeader>
+          <CardContent className="p-2 md:p-6">
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
               <Form {...form}>
                 <form
                   key={formKey}
@@ -543,14 +531,7 @@ export default function AddMemberPage() {
                               disabled={isUploading}
                             />
                           </label>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            disabled={isUploading}
-                          >
-                            Take Photo
-                          </Button>
+                      
                         </div>
                         <p className="mt-1 text-xs text-gray-500">
                           JPG, PNG or GIF. Max size 2MB.
@@ -559,7 +540,7 @@ export default function AddMemberPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-6">
                     <FormField
                       control={form.control}
                       name="name"
@@ -769,7 +750,7 @@ export default function AddMemberPage() {
                     />
 
                     {/* Payment Date Display */}
-                    <div className="rounded-md border p-4">
+                    <div className="rounded-md border p-2 md:p-4">
                       <div className="flex flex-col space-y-1">
                         <span className="text-sm font-medium text-muted-foreground">
                           Next Billing Date
@@ -790,7 +771,7 @@ export default function AddMemberPage() {
                       control={form.control}
                       name="isActive"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                        <FormItem className="flex flex-row items-start space-x-2 md:space-x-3 space-y-0 rounded-md border p-2 md:p-4">
                           <FormControl>
                             <Switch
                               checked={field.value}
@@ -812,7 +793,7 @@ export default function AddMemberPage() {
                       control={form.control}
                       name="isPaid"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                        <FormItem className="flex flex-row items-start space-x-2 md:space-x-3 space-y-0 rounded-md border p-2 md:p-4">
                           <FormControl>
                             <Checkbox
                               key={checkboxKey}
@@ -859,9 +840,9 @@ export default function AddMemberPage() {
                   </div>
                 </form>
               </Form>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   );

@@ -82,14 +82,14 @@ const WhatsAppLogin: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="flex flex-col items-center justify-center min-h-[70vh] p-6">
+      <div className="flex flex-col items-center justify-center min-h-[70vh] p-2 md:p-6 text-xs md:text-base">
         {alert && (
           <div
-            className={`w-full max-w-md p-4 mb-8 rounded-md ${
+            className={`w-full max-w-md p-2 md:p-4 mb-4 md:mb-8 rounded-md ${
               loggedIn
                 ? "bg-green-100 text-green-800"
                 : "bg-red-100 text-red-800"
-            }`}
+            } text-xs md:text-base`}
           >
             {alert}
           </div>
@@ -97,9 +97,9 @@ const WhatsAppLogin: React.FC = () => {
 
         {loggedIn ? (
           <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2 md:mb-4">
               <svg
-                className="w-8 h-8 text-green-600"
+                className="w-6 h-6 md:w-8 md:h-8 text-green-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -113,27 +113,27 @@ const WhatsAppLogin: React.FC = () => {
                 />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold mb-2">WhatsApp is Connected</h2>
-            <p className="text-gray-600">
+            <h2 className="text-lg md:text-2xl font-bold mb-1 md:mb-2">WhatsApp is Connected</h2>
+            <p className="text-gray-600 text-xs md:text-base">
               Your WhatsApp is now ready to send messages
             </p>
           </div>
         ) : (
           <div className="text-center">
-            <h2 className="text-2xl font-bold mb-6">
+            <h2 className="text-lg md:text-2xl font-bold mb-2 md:mb-6">
               Scan QR Code to Login to WhatsApp
             </h2>
-            <div className="border-2 border-gray-200 rounded-lg p-4 inline-block">
+            <div className="border-2 border-gray-200 rounded-lg p-2 md:p-4 inline-block">
               {qr ? (
                 <img src={qr} alt="QR Code" className="max-w-xs mx-auto" />
               ) : (
-                <div className="w-64 h-64 flex flex-col items-center justify-center bg-gray-50">
-                  <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                  <p className="text-gray-600">Generating QR code...</p>
+                <div className="w-40 h-40 md:w-64 md:h-64 flex flex-col items-center justify-center bg-gray-50">
+                  <Loader2 className="h-8 w-8 md:h-12 md:w-12 animate-spin text-primary mb-2 md:mb-4" />
+                  <p className="text-gray-600 text-xs md:text-base">Generating QR code...</p>
                 </div>
               )}
             </div>
-            <p className="mt-4 text-gray-600">
+            <p className="mt-2 md:mt-4 text-gray-600 text-xs md:text-base">
               Open WhatsApp on your phone, tap Menu and select WhatsApp Web
             </p>
           </div>

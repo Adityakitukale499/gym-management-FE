@@ -156,39 +156,40 @@ export default function MembershipPage() {
 
   return (
     <AppLayout>
-      <div className="p-6">
-        <header className="mb-6">
-          <h1 className="text-2xl font-bold">Membership Plans</h1>
-          <p className="text-gray-600">Manage your gym's plans</p>
+      <div className="p-2 md:p-6 text-xs md:text-base">
+        <header className="mb-4 md:mb-6">
+          <h1 className="text-lg md:text-2xl font-bold">Membership Plans</h1>
+          <p className="text-xs md:text-gray-600">Manage your gym's plans</p>
         </header>
 
         <Card className="mb-6">
-          <CardHeader className="flex items-center justify-between">
+          <CardHeader className="flex flex-col md:flex-row md:items-center justify-between p-2 md:p-6 gap-2 md:gap-0">
             <div>
-              <CardTitle>Existing Plans</CardTitle>
-              <CardDescription>List of all plans</CardDescription>
+              <CardTitle className="text-base md:text-xl">Existing Plans</CardTitle>
+              <CardDescription className="text-xs md:text-sm">List of all plans</CardDescription>
             </div>
             <Button
               onClick={() => {
                 setEditingPlan(null);
                 setShowForm(true);
               }}
+              className="text-xs md:text-base px-2 md:px-4 py-1 md:py-2"
             >
               <Plus className="w-4 h-4 mr-2" />
               New Plan
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-2 md:p-6">
             {loading ? (
-              <div className="py-6 flex justify-center">
+              <div className="py-4 md:py-6 flex justify-center">
                 <Loader2 className="animate-spin h-8 w-8" />
               </div>
             ) : plans.length === 0 ? (
-              <p className="text-muted-foreground text-center py-6">
+              <p className="text-muted-foreground text-center py-4 md:py-6 text-xs md:text-base">
                 No plans found.
               </p>
             ) : (
-              <Table>
+              <Table className="text-xs md:text-sm">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>

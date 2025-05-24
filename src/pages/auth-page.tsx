@@ -22,8 +22,8 @@ export default function AuthPage() {
       <div className="absolute inset-0 bg-black bg-opacity-50"></div>
 
       {/* Auth Forms Section */}
-      <div className="w-full sm:w-[90%] md:w-[70%] lg:w-[50%] flex flex-col justify-center p-4 md:p-8 z-10 relative">
-        <div className="max-w-md mx-auto w-full bg-white/40 backdrop-blur-sm p-6 md:p-8 rounded-lg shadow-lg">
+      <div className="w-full sm:w-[90%] md:w-[70%] lg:w-[50%] flex flex-col justify-center p-2 md:p-8 z-10 relative text-sm md:text-base">
+        <div className="max-w-md mx-auto w-full bg-white/40 backdrop-blur-sm p-3 md:p-8 rounded-lg shadow-lg">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Royal GYM</h1>
             <p className="text-gray-700 mt-2">Manage your gym efficiently</p>

@@ -181,32 +181,32 @@ export default function MemberDetailsModal({
           </div>
 
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">
+            <h2 className="text-base md:text-xl font-bold text-gray-900 mb-1">
               {member.name}
             </h2>
             <p className="text-gray-600 mb-4">
               ID: {member.id.toString().padStart(4, "0")}
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
               <div>
-                <p className="text-sm text-gray-500">Phone Number</p>
+                <p className="text-xs md:text-sm text-gray-500">Phone Number</p>
                 <p className="font-medium">{member.phone}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Joined Date</p>
+                <p className="text-xs md:text-sm text-gray-500">Joined Date</p>
                 <p className="font-medium">
                   {format(new Date(member.joiningDate), "MMMM d, yyyy")}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Next Bill Date</p>
+                <p className="text-xs md:text-sm text-gray-500">Next Bill Date</p>
                 <p className="font-medium">
                   {format(new Date(member.nextBillDate), "MMMM d, yyyy")}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Membership</p>
+                <p className="text-xs md:text-sm text-gray-500">Membership</p>
                 {isLoadingPlan ? (
                   <div className="flex items-center">
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -222,19 +222,19 @@ export default function MemberDetailsModal({
                 )}
               </div>
               <div className="md:col-span-2">
-                <p className="text-sm text-gray-500">Address</p>
+                <p className="text-xs md:text-sm text-gray-500">Address</p>
                 <p className="font-medium">
                   {member.address || "No address provided"}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Payment Status</p>
+                <p className="text-xs md:text-sm text-gray-500">Payment Status</p>
                 <p className="font-medium">
                   {member.isPaid ? "Paid" : "Not Paid"}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Status</p>
+                <p className="text-xs md:text-sm text-gray-500">Status</p>
                 <div className="flex items-center mt-1">
                   <Switch
                     checked={isActive}

@@ -319,14 +319,14 @@ export default function Festival() {
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold mb-6">Festival Events Calendar</h1>
+        <h1 className="text-lg md:text-2xl font-bold mb-2 md:mb-6">Festival Events Calendar</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-6">
           <div>
             <Card>
               <CardHeader>
-                <CardTitle>Select Date</CardTitle>
-                <CardDescription>Choose a date to view or add festival events</CardDescription>
+               
+                
               </CardHeader>
               <CardContent>
                 <style dangerouslySetInnerHTML={{ __html: `
@@ -364,19 +364,19 @@ export default function Festival() {
             {showForm && (
               <Card>
                 <CardHeader>
-                  <CardTitle>
+                  <CardTitle className="text-base md:text-xl">
                     {isEditing ? "Edit Festival Event" : "Add New Festival Event"}
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-xs md:text-sm">
                     {isEditing 
                       ? `Editing event for ${selectedDate && formatDate(selectedDate)}`
                       : `Creating event for ${selectedDate && formatDate(selectedDate)}`}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-4">
+                <CardContent className="p-2 md:p-6">
+                  <form onSubmit={handleSubmit} className="space-y-2 md:space-y-4">
                     <div>
-                      <label htmlFor="title" className="block text-sm font-medium mb-1">
+                      <label htmlFor="title" className="block text-xs md:text-sm font-medium mb-1">
                         Title
                       </label>
                       <Input
@@ -386,11 +386,12 @@ export default function Festival() {
                         placeholder="Enter event title"
                         required
                         disabled={loading}
+                        className="text-xs md:text-base"
                       />
                     </div>
                     
                     <div>
-                      <label htmlFor="message" className="block text-sm font-medium mb-1">
+                      <label htmlFor="message" className="block text-xs md:text-sm font-medium mb-1">
                         Message
                       </label>
                       <Textarea
@@ -400,10 +401,11 @@ export default function Festival() {
                         placeholder="Enter event details"
                         rows={4}
                         disabled={loading}
+                        className="text-xs md:text-base"
                       />
                     </div>
                     
-                    <Button type="submit" disabled={loading}>
+                    <Button type="submit" disabled={loading} className="text-xs md:text-base px-2 md:px-4 py-1 md:py-2">
                       {loadingAction === 'updating' ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -430,38 +432,38 @@ export default function Festival() {
         <div className="mt-8">
           <Card>
             <CardHeader>
-              <CardTitle>Events List</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-base md:text-xl">Events List</CardTitle>
+              <CardDescription className="text-xs md:text-sm">
                 {events.length === 0
                   ? "No events found for selected date"
                   : `${events.length} event(s) found for ${selectedDate ? formatDate(selectedDate!) : "selected date"}`}
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-2 md:p-6">
               {loading && !events.length ? (
-                <div className="text-center py-8">
+                <div className="text-center py-4 md:py-8">
                   <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                  <p>Loading events...</p>
+                  <p className="text-xs md:text-base">Loading events...</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2 md:space-y-4">
                   {events.length === 0 ? (
-                    <p className="text-center text-gray-500 py-4">
+                    <p className="text-center text-gray-500 py-2 md:py-4 text-xs md:text-base">
                       No events found for selected date
                     </p>
                   ) : (
                     events.map((event) => (
                       <div
                         key={event.id}
-                        className="p-4 border rounded-lg bg-white hover:bg-gray-50"
+                        className="p-2 md:p-4 border rounded-lg bg-white hover:bg-gray-50 text-xs md:text-base"
                       >
                         <div className="flex items-start justify-between">
                           <div>
-                            <h3 className="font-medium">{event.title}</h3>
-                            <p className="text-sm text-gray-500 mt-1">
+                            <h3 className="font-medium text-xs md:text-base">{event.title}</h3>
+                            <p className="text-xs md:text-sm text-gray-500 mt-1">
                               {formatDate(event.date)}
                             </p>
-                            <p className="mt-2">{event.message}</p>
+                            <p className="mt-2 text-xs md:text-base">{event.message}</p>
                           </div>
                           <div className="flex space-x-2">
                             <Button 
@@ -476,7 +478,6 @@ export default function Festival() {
                               ) : (
                                 <>
                                   <Pencil className="h-4 w-4 mr-1" />
-                                
                                 </>
                               )}
                             </Button>
@@ -492,7 +493,6 @@ export default function Festival() {
                               ) : (
                                 <>
                                   <Trash2 className="h-4 w-4 mr-1" />
-                                
                                 </>
                               )}
                             </Button>

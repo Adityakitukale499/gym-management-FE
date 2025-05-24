@@ -105,20 +105,13 @@ export default function StatsCard({
   };
 
   return (
-    <div
-      className={cn(
-        "bg-white rounded-lg shadow p-5 border-l-4",
-        colorClasses[color].border
-      )}
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-gray-500 text-sm font-medium">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-        </div>
-        <div className={cn("p-3 rounded-lg", colorClasses[color].bg)}>
-          {renderIcon()}
-        </div>
+    <div className="bg-white rounded-lg shadow p-3 md:p-6 flex items-center gap-2 md:gap-4 text-xs md:text-base">
+      <div className={cn("p-3 rounded-lg", colorClasses[color].bg)}>
+        {renderIcon()}
+      </div>
+      <div>
+        <div className="font-semibold text-base md:text-xl">{value}</div>
+        <div className="text-xs md:text-sm text-gray-500">{title}</div>
       </div>
     </div>
   );

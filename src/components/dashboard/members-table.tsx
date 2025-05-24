@@ -135,13 +135,13 @@ export default function MembersTable({ onViewMember }: MembersTableProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Members List</CardTitle>
-        <CardDescription>Manage your gym members</CardDescription>
+    <Card className="max-w-full md:max-w-4xl mx-auto text-xs md:text-base">
+      <CardHeader className="p-2 md:p-6">
+        <CardTitle className="text-base md:text-2xl">Members List</CardTitle>
+        <CardDescription className="text-xs md:text-sm">Manage your gym members</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <CardContent className="p-2 md:p-6 pt-0">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-4 mb-2 md:mb-6">
           <div className="relative flex-1">
             <Input
               placeholder="Search by name or phone..."
@@ -173,9 +173,9 @@ export default function MembersTable({ onViewMember }: MembersTableProps) {
           </div>
         </div>
 
-        <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
-          <Table>
-            <TableHeader className="sticky top-0 bg-white z-10">
+        <div className="overflow-x-auto max-h-[500px] overflow-y-auto rounded-md border border-gray-200">
+          <Table className="min-w-[600px] text-xs md:text-sm">
+            <TableHeader className="sticky top-0 bg-white z-10 text-xs md:text-sm">
               <TableRow>
                 <TableHead>Member</TableHead>
                 <TableHead>ID</TableHead>
@@ -208,7 +208,7 @@ export default function MembersTable({ onViewMember }: MembersTableProps) {
                     key={member.id}
                     className="cursor-pointer hover:bg-gray-50"
                   >
-                    <TableCell>
+                    <TableCell className="py-1 px-2 md:py-3 md:px-4">
                       <div className="flex items-center">
                         <div className="h-10 w-10 flex-shrink-0">
                           {member.photo ? (
@@ -225,27 +225,27 @@ export default function MembersTable({ onViewMember }: MembersTableProps) {
                             </div>
                           )}
                         </div>
-                        <div className="ml-4">
+                        <div className="ml-2 md:ml-4">
                           <div className="text-sm font-medium text-gray-900">
                             {member.name}
                           </div>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-500">
+                    <TableCell className="py-1 px-2 md:py-3 md:px-4 text-sm text-gray-500">
                       {member.id?.toString().padStart(4, "0")}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-500">
+                    <TableCell className="py-1 px-2 md:py-3 md:px-4 text-sm text-gray-500">
                       {member.phone}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-500">
+                    <TableCell className="py-1 px-2 md:py-3 md:px-4 text-sm text-gray-500">
                       {member.joiningDate
                         ? format(new Date(member.joiningDate), "MMM dd, yyyy")
                         : "-"}
                     </TableCell>
                     <TableCell
                       className={cn(
-                        "text-sm",
+                        "py-1 px-2 md:py-3 md:px-4 text-sm",
                         new Date(member.nextBillDate) < new Date()
                           ? "text-red-500 font-medium"
                           : "text-gray-500"
@@ -253,8 +253,8 @@ export default function MembersTable({ onViewMember }: MembersTableProps) {
                     >
                       {format(new Date(member.nextBillDate), "MMM dd, yyyy")}
                     </TableCell>
-                    <TableCell>{getMemberStatusBadge(member)}</TableCell>
-                    <TableCell>
+                    <TableCell className="py-1 px-2 md:py-3 md:px-4">{getMemberStatusBadge(member)}</TableCell>
+                    <TableCell className="py-1 px-2 md:py-3 md:px-4">
                       <Button
                         variant="ghost"
                         className="text-primary-600 hover:text-primary-900"

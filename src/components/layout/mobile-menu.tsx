@@ -47,7 +47,7 @@ export default function MobileMenu() {
     },
     {
       name: "Trainer",
-      href: "/register",
+      href: "/trainer",
       icon: UserPlus,
     },
   ];
