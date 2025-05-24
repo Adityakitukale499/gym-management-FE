@@ -135,7 +135,7 @@ export default function MembersTable({ onViewMember }: MembersTableProps) {
   };
 
   return (
-    <Card className="max-w-full md:max-w-4xl mx-auto text-xs md:text-base">
+    <Card className="w-full text-xs md:text-base">
       <CardHeader className="p-2 md:p-6">
         <CardTitle className="text-base md:text-2xl">Members List</CardTitle>
         <CardDescription className="text-xs md:text-sm">Manage your gym members</CardDescription>
