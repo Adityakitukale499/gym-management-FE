@@ -3,8 +3,6 @@ import io from "socket.io-client";
 import AppLayout from "@/components/layout/app-layout";
 import { Loader2 } from "lucide-react";
 
-const socket = io("https://gym-script.onrender.com");
-
 const WhatsAppLogin: React.FC = () => {
   const [qr, setQr] = useState<string | null>(null);
   const [loggedIn, setLoggedIn] = useState(false);
