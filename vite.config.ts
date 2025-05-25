@@ -23,6 +23,10 @@ export default defineConfig({
       "@assets": path.resolve(__dirname, "attached_assets"),
     },
   },
+  server: {
+    port: 3000,
+    host: true,
+  },
   root: path.resolve(__dirname),
   build: {
     outDir: path.resolve(__dirname, "dist"),

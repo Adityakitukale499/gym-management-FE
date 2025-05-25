@@ -320,7 +320,7 @@ export default function AddMemberPage() {
     try {
       const welcomeMessage = `Hey ${name}! 👋 Welcome to the Royal Gym family in Mauda! 🏋️‍♂️ We're thrilled to have you with us. Let's crush those fitness goals together. 💪 If you need anything, we're just a message away! 🔥`;
       const response = await fetch(
-        "https://gym-script.onrender.com/send-whatsapp",
+        "http://srv840784.hstgr.cloud:3001/send-whatsapp",
         {
           method: "POST",
           headers: {

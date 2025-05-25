@@ -10,11 +10,11 @@ const WhatsAppLogin: React.FC = () => {
   const [alert, setAlert] = useState<string | null>(null);
 
   useEffect(() => {
-    const socketInstance = io("https://gym-script.onrender.com");
+    const socketInstance = io("http://srv840784.hstgr.cloud:3001");
 
     const checkStatus = async () => {
       try {
-        const res = await fetch("https://gym-script.onrender.com/status");
+        const res = await fetch("http://srv840784.hstgr.cloud:3001/status");
         const data = await res.json();
         setLoggedIn(data.loggedIn);
         setLoading(false);
