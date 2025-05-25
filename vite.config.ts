@@ -26,6 +26,7 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
+    allowedHosts: ["srv840784.hstgr.cloud"],
   },
   root: path.resolve(__dirname),
   build: {
