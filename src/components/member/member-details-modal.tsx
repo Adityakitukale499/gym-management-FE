@@ -27,26 +27,45 @@ interface MemberDetailsModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export default function MemberDetailsModal({ member, open, onOpenChange }: MemberDetailsModalProps) {
+export default function MemberDetailsModal({
+  member,
+  open,
+  onOpenChange,
+}: MemberDetailsModalProps) {
   const { toast } = useToast();
   const [isActive, setIsActive] = useState(member?.isActive ?? false);
-  const [membershipPlan, setMembershipPlan] = useState<{ name: string; durationMonths: number } | null>(null);
+  const [membershipPlan, setMembershipPlan] = useState<{
+    name: string;
+    durationMonths: number;
+    price: number;
+  } | null>(null);
   const [isLoadingPlan, setIsLoadingPlan] = useState(false);
   const [, navigate] = useLocation();
   const cardRef = useRef(null);
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
-      const res = await apiRequest("PATCH", `/api/members/${id}/status`, { isActive });
+      const res = await apiRequest("PATCH", `/api/members/${id}/status`, {
+        isActive,
+      });
       return res.json();
     },
     onSuccess: (data) => {
-      toast({ title: "Status updated", description: `Member status updated to ${data.isActive ? "active" : "inactive"}.` });
+      toast({
+        title: "Status updated",
+        description: `Member status updated to ${
+          data.isActive ? "active" : "inactive"
+        }.`,
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/members"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
     },
     onError: (error) => {
-      toast({ title: "Failed to update status", description: error.message, variant: "destructive" });
+      toast({
+        title: "Failed to update status",
+        description: error.message,
+        variant: "destructive",
+      });
       setIsActive(member?.isActive || false);
     },
   });
@@ -54,20 +73,35 @@ export default function MemberDetailsModal({ member, open, onOpenChange }: Membe
   const handleStatusChange = async (checked: boolean) => {
     if (!member) return;
     try {
-      const memberRef = doc(db, FIRESTORE_COLLECTIONS.MEMBERS, String(member.id));
+      const memberRef = doc(
+        db,
+        FIRESTORE_COLLECTIONS.MEMBERS,
+        String(member.id)
+      );
       await updateDoc(memberRef, { isActive: checked });
       setIsActive(checked);
       queryClient.invalidateQueries({ queryKey: ["members"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
-      toast({ title: "Status updated", description: `Member is now ${checked ? "active" : "inactive"}` });
+      toast({
+        title: "Status updated",
+        description: `Member is now ${checked ? "active" : "inactive"}`,
+      });
     } catch (error) {
       console.error("Error updating member status:", error);
-      toast({ title: "Failed to update status", description: "There was an error updating the member's status.", variant: "destructive" });
+      toast({
+        title: "Failed to update status",
+        description: "There was an error updating the member's status.",
+        variant: "destructive",
+      });
     }
   };
 
   useEffect(() => {
-    if (member && member.isActive !== isActive && !updateStatusMutation.isPending) {
+    if (
+      member &&
+      member.isActive !== isActive &&
+      !updateStatusMutation.isPending
+    ) {
       setIsActive(member.isActive);
     }
   }, [member]);
@@ -80,11 +114,20 @@ export default function MemberDetailsModal({ member, open, onOpenChange }: Membe
       }
       setIsLoadingPlan(true);
       try {
-        const planRef = doc(db, FIRESTORE_COLLECTIONS.MEMBERSHIP_PLANS, String(member.membershipPlanId));
+        const planRef = doc(
+          db,
+          FIRESTORE_COLLECTIONS.MEMBERSHIP_PLANS,
+          String(member.membershipPlanId)
+        );
         const planSnap = await getDoc(planRef);
         if (planSnap.exists()) {
           const data = planSnap.data();
-          setMembershipPlan({ name: data.name, durationMonths: data.durationMonths });
+          console.log({ data });
+          setMembershipPlan({
+            name: data.name,
+            durationMonths: data.durationMonths,
+            price: data.price,
+          });
         } else {
           setMembershipPlan(null);
         }
@@ -132,43 +175,98 @@ export default function MemberDetailsModal({ member, open, onOpenChange }: Membe
           <div ref={cardRef} className="flex flex-col md:flex-row mt-6">
             <div className="mb-6 md:mb-0 md:mr-6 flex-shrink-0 flex justify-center md:block">
               {member.photo ? (
-                <img className="h-32 w-32 rounded-full object-cover border-4 border-gray-200" src={member.photo} alt={member.name} />
+                <img
+                  className="h-32 w-32 rounded-full object-cover border-4 border-gray-200"
+                  src={member.photo}
+                  alt={member.name}
+                />
               ) : (
                 <div className="h-32 w-32 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-200">
-                  <span className="text-gray-500 text-4xl font-medium">{member.name.charAt(0)}</span>
+                  <span className="text-gray-500 text-4xl font-medium">
+                    {member.name.charAt(0)}
+                  </span>
                 </div>
               )}
             </div>
 
             <div className="flex-1">
-              <h2 className="text-base md:text-xl font-bold text-gray-900 mb-1">{member.name}</h2>
-              <p className="text-gray-600 mb-4">ID: {member.id.toString().padStart(4, "0")}</p>
+              <h2 className="text-base md:text-xl font-bold text-gray-900 mb-1">
+                {member.name}
+              </h2>
+              <p className="text-gray-600 mb-4">
+                ID: {member.id.toString().padStart(4, "0")}
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
-                <div><p className="text-xs md:text-sm text-gray-500">Phone Number</p><p className="font-medium">{member.phone}</p></div>
-                <div><p className="text-xs md:text-sm text-gray-500">Joined Date</p><p className="font-medium">{format(new Date(member.joiningDate), "MMMM d, yyyy")}</p></div>
-                <div><p className="text-xs md:text-sm text-gray-500">Next Bill Date</p><p className="font-medium">{format(new Date(member.nextBillDate), "MMMM d, yyyy")}</p></div>
+                <div>
+                  <p className="text-xs md:text-sm text-gray-500">
+                    Phone Number
+                  </p>
+                  <p className="font-medium">{member.phone}</p>
+                </div>
+                <div>
+                  <p className="text-xs md:text-sm text-gray-500">
+                    Joined Date
+                  </p>
+                  <p className="font-medium">
+                    {format(new Date(member.joiningDate), "MMMM d, yyyy")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs md:text-sm text-gray-500">
+                    Next Bill Date
+                  </p>
+                  <p className="font-medium">
+                    {format(new Date(member.nextBillDate), "MMMM d, yyyy")}
+                  </p>
+                </div>
                 <div>
                   <p className="text-xs md:text-sm text-gray-500">Membership</p>
                   {isLoadingPlan ? (
-                    <div className="flex items-center"><Loader2 className="h-4 w-4 animate-spin mr-2" /><span>Loading...</span></div>
+                    <div className="flex items-center">
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <span>Loading...</span>
+                    </div>
                   ) : membershipPlan ? (
-                    <p className="font-medium">{membershipPlan.name} ({membershipPlan.durationMonths} Month{membershipPlan.durationMonths !== 1 ? "s" : ""})</p>
+                    <p className="font-medium">
+                      {membershipPlan.name} ({membershipPlan.durationMonths}{" "}
+                      Month{membershipPlan.durationMonths !== 1 ? "s" : ""})
+                      {membershipPlan?.price}₹
+                    </p>
                   ) : (
                     <p className="text-muted-foreground">No membership plan</p>
                   )}
                 </div>
                 <div className="md:col-span-2">
                   <p className="text-xs md:text-sm text-gray-500">Address</p>
-                  <p className="font-medium">{member.address || "No address provided"}</p>
+                  <p className="font-medium">
+                    {member.address || "No address provided"}
+                  </p>
                 </div>
-                <div><p className="text-xs md:text-sm text-gray-500">Payment Status</p><p className="font-medium">{member.isPaid ? "Paid" : "Not Paid"}</p></div>
+                <div>
+                  <p className="text-xs md:text-sm text-gray-500">
+                    Payment Status
+                  </p>
+                  <p className="font-medium">
+                    {member.isPaid ? "Paid" : "Not Paid"}
+                  </p>
+                </div>
                 <div>
                   <p className="text-xs md:text-sm text-gray-500">Status</p>
                   <div className="flex items-center mt-1">
-                    <Switch checked={isActive} onCheckedChange={handleStatusChange} disabled={updateStatusMutation.isPending} id="member-status-toggle" />
-                    <Label htmlFor="member-status-toggle" className="ml-2 text-sm font-medium text-gray-700">
+                    <Switch
+                      checked={isActive}
+                      onCheckedChange={handleStatusChange}
+                      disabled={updateStatusMutation.isPending}
+                      id="member-status-toggle"
+                    />
+                    <Label
+                      htmlFor="member-status-toggle"
+                      className="ml-2 text-sm font-medium text-gray-700"
+                    >
                       {isActive ? "Active" : "Inactive"}
-                      {updateStatusMutation.isPending && <Loader2 className="inline-block ml-2 h-3 w-3 animate-spin" />}
+                      {updateStatusMutation.isPending && (
+                        <Loader2 className="inline-block ml-2 h-3 w-3 animate-spin" />
+                      )}
                     </Label>
                   </div>
                 </div>
