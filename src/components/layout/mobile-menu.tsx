@@ -12,6 +12,8 @@ import {
   Calendar,
   LogOut,
   PhoneCall,
+  Package,
+  Users,
 } from "lucide-react";
 
 export default function MobileMenu() {
@@ -36,6 +38,16 @@ export default function MobileMenu() {
       icon: UserPlus,
     },
     {
+      name: "Products",
+      href: "/products",
+      icon: Package,
+    },
+    {
+      name: "Trainer Management",
+      href: "/trainer-management",
+      icon: Users,
+    },
+    {
       name: "Festival",
       href: "/festival",
       icon: Calendar,
@@ -44,11 +56,6 @@ export default function MobileMenu() {
       name: "Whatsapp",
       href: "/whatsapp",
       icon: PhoneCall,
-    },
-    {
-      name: "Trainer",
-      href: "/trainer",
-      icon: UserPlus,
     },
   ];
 

@@ -8,6 +8,8 @@ import {
   Calendar,
   LogOut,
   PhoneCall,
+  Package,
+  Users,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -31,6 +33,16 @@ export default function Sidebar() {
       icon: UserPlus,
     },
     {
+      name: "Products",
+      href: "/products",
+      icon: Package,
+    },
+    {
+      name: "Trainer Management",
+      href: "/trainer-management",
+      icon: Users,
+    },
+    {
       name: "Festival",
       href: "/festival",
       icon: Calendar,
@@ -39,11 +51,6 @@ export default function Sidebar() {
       name: "Whatsapp",
       href: "/whatsapp",
       icon: PhoneCall,
-    },
-    {
-      name: "Trainer",
-      href: "/trainer", 
-      icon: UserPlus,
     },
   ];
 

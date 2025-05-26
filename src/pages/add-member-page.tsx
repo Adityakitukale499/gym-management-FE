@@ -319,19 +319,16 @@ export default function AddMemberPage() {
   const sendWelcomeWhatsApp = async (phone: string, name: string) => {
     try {
       const welcomeMessage = `Hey ${name}! 👋 Welcome to the Royal Gym family in Mauda! 🏋️‍♂️ We're thrilled to have you with us. Let's crush those fitness goals together. 💪 If you need anything, we're just a message away! 🔥`;
-      const response = await fetch(
-        "http://srv840784.hstgr.cloud:3001/send-whatsapp",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            phone,
-            message: welcomeMessage,
-          }),
-        }
-      );
+      const response = await fetch("http://localhost:3001/send-whatsapp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phone,
+          message: welcomeMessage,
+        }),
+      });
 
       const data = await response.json();
 
@@ -441,10 +438,14 @@ export default function AddMemberPage() {
   return (
     <AppLayout>
       <div className="p-2 md:p-6 text-xs md:text-base">
-        <h1 className="text-lg md:text-2xl font-bold text-gray-900 mb-2 md:mb-6">{isEditMode ? "Edit Member" : "Add Member"}</h1>
+        <h1 className="text-lg md:text-2xl font-bold text-gray-900 mb-2 md:mb-6">
+          {isEditMode ? "Edit Member" : "Add Member"}
+        </h1>
         <Card className="mb-4">
           <CardHeader className="p-2 md:p-6">
-            <CardTitle className="text-base md:text-xl">{isEditMode ? "Edit Member Details" : "Add New Member"}</CardTitle>
+            <CardTitle className="text-base md:text-xl">
+              {isEditMode ? "Edit Member Details" : "Add New Member"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-2 md:p-6">
             {isLoading ? (
@@ -531,7 +532,6 @@ export default function AddMemberPage() {
                               disabled={isUploading}
                             />
                           </label>
-                      
                         </div>
                         <p className="mt-1 text-xs text-gray-500">
                           JPG, PNG or GIF. Max size 2MB.

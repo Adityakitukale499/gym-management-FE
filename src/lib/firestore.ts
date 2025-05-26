@@ -1,3 +1,4 @@
+import { TrainerPermissions } from "@/lib/types";
 import {
   collection,
   addDoc,
@@ -10,8 +11,10 @@ import {
   getDoc,
   DocumentData,
   Timestamp,
+  serverTimestamp,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { db, auth } from "./firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 export interface MembershipPlan {
   id: string;
@@ -25,6 +28,42 @@ export interface MembershipPlan {
   updatedAt?: Date;
 }
 
+export const PRODUCT_CATEGORIES = {
+  SUPPLEMENTS: "Supplements",
+  EQUIPMENT: "Equipment",
+  CLOTHING: "Clothing",
+  ACCESSORIES: "Accessories",
+  NUTRITION: "Nutrition",
+  FITNESS_GEAR: "Fitness Gear",
+} as const;
+
+export type ProductCategory = keyof typeof PRODUCT_CATEGORIES;
+
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image?: string;
+  isActive: boolean;
+  gymId: string;
+  category: ProductCategory;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface Trainer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  isActive: boolean;
+  permissions: TrainerPermissions;
+  gymId: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export const FIRESTORE_COLLECTIONS = {
   MEMBERS: "members",
   MEMBERSHIP_PLANS: "membershipPlans",
@@ -32,6 +71,8 @@ export const FIRESTORE_COLLECTIONS = {
   USERS: "users",
   PAYMENTS: "payments",
   ATTENDANCE: "attendance",
+  PRODUCTS: "products",
+  TRAINERS: "trainers",
 } as const;
 
 export const addMember = async (memberData: DocumentData) => {
@@ -197,4 +238,162 @@ export const getAttendance = async (
     id: doc.id,
     ...doc.data(),
   }));
+};
+
+export const getProducts = async (): Promise<Product[]> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Not authenticated");
+
+  const productsRef = collection(db, FIRESTORE_COLLECTIONS.PRODUCTS);
+  const q = query(productsRef);
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Product[];
+};
+
+export const addProduct = async (data: {
+  name: string;
+  description: string;
+  price: number;
+  image?: string;
+  isActive: boolean;
+  gymId: string;
+  category: ProductCategory;
+}) => {
+  const productsRef = collection(db, FIRESTORE_COLLECTIONS.PRODUCTS);
+  const docRef = await addDoc(productsRef, {
+    ...data,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return docRef.id;
+};
+
+export const updateProduct = async (
+  id: string,
+  data: Partial<{
+    name: string;
+    description: string;
+    price: number;
+    image?: string;
+    isActive: boolean;
+  }>
+) => {
+  const productRef = doc(db, FIRESTORE_COLLECTIONS.PRODUCTS, id);
+  await updateDoc(productRef, {
+    ...data,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const deleteProduct = async (id: string) => {
+  const productRef = doc(db, FIRESTORE_COLLECTIONS.PRODUCTS, id);
+  await deleteDoc(productRef);
+};
+
+export const getTrainers = async (): Promise<Trainer[]> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Not authenticated");
+
+  const trainersRef = collection(db, FIRESTORE_COLLECTIONS.TRAINERS);
+  const q = query(trainersRef);
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+    createdAt: doc.data().createdAt?.toDate(),
+    updatedAt: doc.data().updatedAt?.toDate(),
+  })) as Trainer[];
+};
+
+export const addTrainer = async (
+  data: Omit<Trainer, "id" | "createdAt" | "updatedAt"> & { password: string }
+): Promise<Trainer> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Not authenticated");
+
+  try {
+    // Create Firebase Authentication account for trainer
+    const trainerAuth = await createUserWithEmailAndPassword(
+      auth,
+      data.email,
+      data.password
+    );
+
+    // Remove password from trainer data before storing in Firestore
+    const { password, ...trainerData } = data;
+
+    const trainerDoc = {
+      ...trainerData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    const trainerRef = await addDoc(
+      collection(db, FIRESTORE_COLLECTIONS.TRAINERS),
+      trainerDoc
+    );
+
+    // Create user document with trainer role
+    const userData = {
+      id: trainerAuth.user.uid,
+      email: data.email,
+      role: "trainer" as const,
+      gymId: user.uid,
+      trainerId: trainerRef.id,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    await addDoc(collection(db, FIRESTORE_COLLECTIONS.USERS), userData);
+
+    return {
+      id: trainerRef.id,
+      ...trainerData,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Trainer;
+  } catch (error: any) {
+    // If Firebase Auth fails, throw a more user-friendly error
+    if (error.code === "auth/email-already-in-use") {
+      throw new Error(
+        "This email is already registered. Please use a different email address."
+      );
+    }
+    throw error;
+  }
+};
+
+export const updateTrainer = async (
+  id: string,
+  data: Partial<Trainer>
+): Promise<void> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Not authenticated");
+
+  const trainerRef = doc(db, FIRESTORE_COLLECTIONS.TRAINERS, id);
+  await updateDoc(trainerRef, {
+    ...data,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const deleteTrainer = async (id: string): Promise<void> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Not authenticated");
+
+  // Delete trainer profile
+  const trainerRef = doc(db, FIRESTORE_COLLECTIONS.TRAINERS, id);
+  await deleteDoc(trainerRef);
+
+  // Delete associated user account
+  const usersRef = collection(db, FIRESTORE_COLLECTIONS.USERS);
+  const q = query(usersRef, where("trainerId", "==", id));
+  const snapshot = await getDocs(q);
+
+  const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref));
+  await Promise.all(deletePromises);
 };

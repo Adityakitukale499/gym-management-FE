@@ -17,11 +17,11 @@ import {
 import { getDocs, collection } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { Gym } from "@shared/schema";
+import { User } from "@/lib/types";
 import { FIRESTORE_COLLECTIONS } from "@/lib/firestore";
 
 type AuthContextType = {
-  user: Gym | null;
+  user: User | null;
   isLoading: boolean;
   loginMutation: {
     mutate: (data: { email: string; password: string }) => Promise<void>;
@@ -32,7 +32,7 @@ type AuthContextType = {
     isPending: boolean;
   };
   registerMutation: {
-    mutate: (data: Omit<Gym, "id" | "createdAt">) => Promise<void>;
+    mutate: (data: Omit<User, "id" | "createdAt">) => Promise<void>;
     isPending: boolean;
   };
   forgotPasswordMutation: {
@@ -55,7 +55,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  const [user, setUser] = useState<Gym | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoginPending, setIsLoginPending] = useState(false);
   const [isLogoutPending, setIsLogoutPending] = useState(false);
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         );
 
         if (!gymsSnapshot.empty) {
-          const firstGym = gymsSnapshot.docs[0].data() as Gym;
+          const firstGym = gymsSnapshot.docs[0].data() as User;
           setUser(firstGym);
         } else {
           setUser(null);

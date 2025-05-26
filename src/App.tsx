@@ -13,6 +13,8 @@ import AddMemberPage from "@/pages/add-member-page";
 import FestivalPage from "@/pages/festival";
 import WhatsAppLogin from "./pages/whatsapp";
 import RegisterForm from "./components/auth/register-form";
+import ProductCatalogPage from "@/pages/product-catalog-page";
+import TrainerManagementPage from "@/pages/trainer-management-page";
 
 function Router() {
   return (
@@ -21,6 +23,11 @@ function Router() {
       <ProtectedRoute path="/" component={DashboardPage} />
       <ProtectedRoute path="/membership" component={MembershipPage} />
       <ProtectedRoute path="/add-member" component={AddMemberPage} />
+      <ProtectedRoute path="/products" component={ProductCatalogPage} />
+      <ProtectedRoute
+        path="/trainer-management"
+        component={TrainerManagementPage}
+      />
       <ProtectedRoute path="/festival" component={FestivalPage} />
       <ProtectedRoute path="/whatsapp" component={() => <WhatsAppLogin />} />
       <ProtectedRoute path="/trainer" component={() => <RegisterForm />} />

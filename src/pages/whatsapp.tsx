@@ -10,11 +10,11 @@ const WhatsAppLogin: React.FC = () => {
   const [alert, setAlert] = useState<string | null>(null);
 
   useEffect(() => {
-    const socketInstance = io("http://srv840784.hstgr.cloud:3001");
+    const socketInstance = io("http://localhost:3001");
 
     const checkStatus = async () => {
       try {
-        const res = await fetch("http://srv840784.hstgr.cloud:3001/status");
+        const res = await fetch("http://localhost:3001/status");
         const data = await res.json();
         setLoggedIn(data.loggedIn);
         setLoading(false);
@@ -113,7 +113,9 @@ const WhatsAppLogin: React.FC = () => {
                 />
               </svg>
             </div>
-            <h2 className="text-lg md:text-2xl font-bold mb-1 md:mb-2">WhatsApp is Connected</h2>
+            <h2 className="text-lg md:text-2xl font-bold mb-1 md:mb-2">
+              WhatsApp is Connected
+            </h2>
             <p className="text-gray-600 text-xs md:text-base">
               Your WhatsApp is now ready to send messages
             </p>
@@ -129,7 +131,9 @@ const WhatsAppLogin: React.FC = () => {
               ) : (
                 <div className="w-40 h-40 md:w-64 md:h-64 flex flex-col items-center justify-center bg-gray-50">
                   <Loader2 className="h-8 w-8 md:h-12 md:w-12 animate-spin text-primary mb-2 md:mb-4" />
-                  <p className="text-gray-600 text-xs md:text-base">Generating QR code...</p>
+                  <p className="text-gray-600 text-xs md:text-base">
+                    Generating QR code...
+                  </p>
                 </div>
               )}
             </div>
