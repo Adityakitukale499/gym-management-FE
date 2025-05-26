@@ -11,7 +11,6 @@ const WhatsAppLogin: React.FC = () => {
 
   useEffect(() => {
     const socketInstance = io("http://localhost:3001");
-
     const checkStatus = async () => {
       try {
         const res = await fetch("http://localhost:3001/status");
