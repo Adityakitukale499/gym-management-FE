@@ -35,6 +35,12 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Plus, Pencil, Loader2 } from "lucide-react";
 
 interface MembershipPlan {
@@ -277,32 +283,6 @@ export default function MembershipPage() {
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        {/* <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="icon" variant="ghost">
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Delete "{plan.name}"?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                onClick={() => handleDelete(plan.id)}
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog> */}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -312,24 +292,22 @@ export default function MembershipPage() {
           </CardContent>
         </Card>
 
-        {showForm && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{editingPlan ? "Edit Plan" : "Create Plan"}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MembershipPlanForm
-                plan={editingPlan}
-                onSubmit={handleSubmit}
-                onCancel={() => {
-                  setEditingPlan(null);
-                  setShowForm(false);
-                }}
-                isSubmitting={submitting}
-              />
-            </CardContent>
-          </Card>
-        )}
+        <Dialog open={showForm} onOpenChange={setShowForm}>
+          <DialogContent className="w-[90vw] md:w-[80vw] lg:w-[600px] max-w-[90vw] md:max-w-[80vw] lg:max-w-[700px]">
+            <DialogHeader>
+              <DialogTitle>{editingPlan ? "Edit Plan" : "Create Plan"}</DialogTitle>
+            </DialogHeader>
+            <MembershipPlanForm
+              plan={editingPlan}
+              onSubmit={handleSubmit}
+              onCancel={() => {
+                setEditingPlan(null);
+                setShowForm(false);
+              }}
+              isSubmitting={submitting}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );

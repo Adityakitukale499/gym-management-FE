@@ -10,10 +10,10 @@ const WhatsAppLogin: React.FC = () => {
   const [alert, setAlert] = useState<string | null>(null);
 
   useEffect(() => {
-    const socketInstance = io("http://localhost:3001");
+    const socketInstance = io("http://165.232.176.49:3001");
     const checkStatus = async () => {
       try {
-        const res = await fetch("http://localhost:3001/status");
+        const res = await fetch("http://165.232.176.49:3001/status");
         const data = await res.json();
         setLoggedIn(data.loggedIn);
         setLoading(false);

@@ -73,6 +73,7 @@ export const FIRESTORE_COLLECTIONS = {
   ATTENDANCE: "attendance",
   PRODUCTS: "products",
   TRAINERS: "trainers",
+  FESTIVALS: "festivals",
 } as const;
 
 export const addMember = async (memberData: DocumentData) => {

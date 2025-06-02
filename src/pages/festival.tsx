@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Pencil, Trash2, Loader2 } from "lucide-react";
+import { FIRESTORE_COLLECTIONS } from "@/lib/firestore";
 
 type FestivalEvent = {
   id: string;
@@ -35,7 +36,7 @@ export default function Festival() {
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
-  const [events, setEvents] = useState<FestivalEvent[]>([]);
+  const [currentEvent, setCurrentEvent] = useState<FestivalEvent | null>(null);
   const [allEvents, setAllEvents] = useState<FestivalEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
@@ -45,20 +46,17 @@ export default function Festival() {
   const [eventToDelete, setEventToDelete] = useState<{ id: string, title: string } | null>(null);
   const isEditingRef = useRef(false);
 
-  // Update the ref whenever isEditing changes
   useEffect(() => {
     isEditingRef.current = isEditing;
   }, [isEditing]);
 
-  // Fetch all events when component mounts
   useEffect(() => {
     fetchAllEvents();
   }, []);
 
-  // Fetch events for selected date
   useEffect(() => {
     if (selectedDate) {
-      fetchEventsForDate(selectedDate);
+      fetchEventForDate(selectedDate);
     }
   }, [selectedDate]);
 
@@ -67,7 +65,7 @@ export default function Festival() {
       setLoading(true);
       toast.loading("Loading all events...");
       
-      const querySnapshot = await getDocs(collection(db, "FESTIVAL"));
+      const querySnapshot = await getDocs(collection(db, FIRESTORE_COLLECTIONS.FESTIVALS));
       const fetchedEvents: FestivalEvent[] = [];
       
       querySnapshot.forEach((doc) => {
@@ -93,63 +91,58 @@ export default function Festival() {
     }
   };
 
-  const fetchEventsForDate = async (date: Date) => {
+  const fetchEventForDate = async (date: Date) => {
     try {
       setLoading(true);
-      toast.loading(`Loading events for ${formatDate(date)}...`);
+      toast.loading(`Loading event for ${formatDate(date)}...`);
       
-      // Start of the selected date
       const startOfDay = new Date(date);
       startOfDay.setHours(0, 0, 0, 0);
       
-      // End of the selected date
       const endOfDay = new Date(date);
       endOfDay.setHours(23, 59, 59, 999);
       
       const q = query(
-        collection(db, "FESTIVAL"),
+        collection(db, FIRESTORE_COLLECTIONS.FESTIVALS),
         where("date", ">=", Timestamp.fromDate(startOfDay)),
         where("date", "<=", Timestamp.fromDate(endOfDay))
       );
       
       const querySnapshot = await getDocs(q);
-      const fetchedEvents: FestivalEvent[] = [];
+      let fetchedEvent: FestivalEvent | null = null;
       
-      querySnapshot.forEach((doc) => {
+      if (!querySnapshot.empty) {
+        const doc = querySnapshot.docs[0]; // Get only the first event
         const data = doc.data();
-        fetchedEvents.push({
+        fetchedEvent = {
           id: doc.id,
           date: data.date.toDate(),
           title: data.title,
           message: data.message,
           createdAt: data.createdAt.toDate(),
-        });
-      });
+        };
+      }
       
-      setEvents(fetchedEvents);
+      setCurrentEvent(fetchedEvent);
       toast.dismiss();
       
-      // Don't automatically show the form or pre-fill for existing events
-      // BUT - don't hide the form if we're explicitly in editing mode
-      if (fetchedEvents.length > 0 && !isEditingRef.current) {
-        setIsEditing(false); // Reset editing state
-        setShowForm(false); // Don't show the form automatically
-        toast.success(`Found ${fetchedEvents.length} event(s) for ${formatDate(date)}`);
-      } else if (fetchedEvents.length === 0) {
-        // For dates without events, allow creating a new event
+      if (fetchedEvent && !isEditingRef.current) {
+        setIsEditing(false);
+        setShowForm(false);
+        toast.success(`Found event for ${formatDate(date)}`);
+      } else if (!fetchedEvent) {
         setTitle("");
         setMessage("");
         setIsEditing(false);
         setEditingEventId(null);
-        setShowForm(true); // Show the form for new events
-        toast.info(`No events found for ${formatDate(date)}. Create a new one!`);
+        setShowForm(true);
+        toast.info(`No event found for ${formatDate(date)}. Create a new one!`);
       }
-      // If we're editing (isEditingRef.current is true), don't change form visibility
       
     } catch (error) {
-      console.error("Error fetching events for date:", error);
+      console.error("Error fetching event for date:", error);
       toast.dismiss();
-      toast.error("Failed to fetch events for the selected date. Please try again.");
+      toast.error("Failed to fetch event for the selected date. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -158,8 +151,6 @@ export default function Festival() {
   const handleDateChange = (value: any) => {
     const selectedDate = Array.isArray(value) ? value[0] : value;
     setSelectedDate(selectedDate);
-    // Don't automatically set showForm to true
-    // This will be handled in fetchEventsForDate
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -185,12 +176,11 @@ export default function Festival() {
         createdAt: Timestamp.fromDate(new Date()),
       };
       
-      // If we're editing an existing event
       if (isEditing && editingEventId) {
         setLoadingAction('updating');
         toast.loading(`Updating event "${title}"...`);
         
-        const eventRef = doc(db, "FESTIVAL", editingEventId);
+        const eventRef = doc(db, FIRESTORE_COLLECTIONS.FESTIVALS, editingEventId);
         await updateDoc(eventRef, {
           title,
           message,
@@ -200,27 +190,43 @@ export default function Festival() {
         toast.dismiss();
         toast.success(`Event "${title}" updated successfully`);
         
-        // Reset form state after update
         setShowForm(false);
         setIsEditing(false);
         setEditingEventId(null);
       } else {
-        // Creating a new event
+        // Check if an event already exists for this date
+        const startOfDay = new Date(selectedDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        
+        const endOfDay = new Date(selectedDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        
+        const q = query(
+          collection(db, FIRESTORE_COLLECTIONS.FESTIVALS),
+          where("date", ">=", Timestamp.fromDate(startOfDay)),
+          where("date", "<=", Timestamp.fromDate(endOfDay))
+        );
+        
+        const existingEvents = await getDocs(q);
+        
+        if (!existingEvents.empty) {
+          toast.error("An event already exists for this date. Please choose another date.");
+          return;
+        }
+        
         setLoadingAction('creating');
         toast.loading(`Creating new event "${title}"...`);
         
-        await addDoc(collection(db, "FESTIVAL"), eventData);
+        await addDoc(collection(db, FIRESTORE_COLLECTIONS.FESTIVALS), eventData);
         
         toast.dismiss();
         toast.success(`New event "${title}" created successfully`);
         
-        // Reset form for new event
         setTitle("");
         setMessage("");
       }
       
-      // Refresh both event lists
-      fetchEventsForDate(selectedDate);
+      fetchEventForDate(selectedDate);
       fetchAllEvents();
     } catch (error) {
       console.error("Error saving event:", error);
@@ -238,15 +244,13 @@ export default function Festival() {
   const handleEdit = (event: FestivalEvent) => {
     toast.info(`Editing event "${event.title}"`);
     
-    // Set editing mode first to prevent form from hiding
     setIsEditing(true);
     setEditingEventId(event.id);
     
-    // Then update the date (which will trigger fetchEventsForDate)
     setSelectedDate(event.date);
     setTitle(event.title);
     setMessage(event.message);
-    setShowForm(true); // Explicitly show the form
+    setShowForm(true); 
   };
 
   const handleDeleteClick = (eventId: string, eventTitle: string) => {
@@ -262,16 +266,14 @@ export default function Festival() {
       setLoadingAction('deleting');
       
       toast.loading(`Deleting event "${eventToDelete.title}"...`);
-      await deleteDoc(doc(db, "FESTIVAL", eventToDelete.id));
+      await deleteDoc(doc(db, FIRESTORE_COLLECTIONS.FESTIVALS, eventToDelete.id));
       
       toast.dismiss();
       toast.success(`Event "${eventToDelete.title}" deleted successfully`);
       
-      // Refresh the events lists
-      fetchEventsForDate(selectedDate as Date);
+      fetchEventForDate(selectedDate as Date);
       fetchAllEvents();
       
-      // Clear form if we were editing this event
       if (editingEventId === eventToDelete.id) {
         setTitle("");
         setMessage("");
@@ -299,10 +301,8 @@ export default function Festival() {
     });
   };
   
-  // Function to add custom class to dates that have events
   const tileClassName = ({ date, view }: { date: Date; view: string }) => {
     if (view === 'month') {
-      // Check if the date has any events
       const hasEvent = allEvents.some(event => {
         const eventDate = new Date(event.date);
         return (
@@ -325,8 +325,6 @@ export default function Festival() {
           <div>
             <Card>
               <CardHeader>
-               
-                
               </CardHeader>
               <CardContent>
                 <style dangerouslySetInnerHTML={{ __html: `
@@ -398,7 +396,7 @@ export default function Festival() {
                         id="message"
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                        placeholder="Enter event details"
+                        placeholder="Enter event message"
                         rows={4}
                         disabled={loading}
                         className="text-xs md:text-base"
@@ -430,84 +428,74 @@ export default function Festival() {
         </div>
         
         <div className="mt-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base md:text-xl">Events List</CardTitle>
-              <CardDescription className="text-xs md:text-sm">
-                {events.length === 0
-                  ? "No events found for selected date"
-                  : `${events.length} event(s) found for ${selectedDate ? formatDate(selectedDate!) : "selected date"}`}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-2 md:p-6">
-              {loading && !events.length ? (
-                <div className="text-center py-4 md:py-8">
-                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                  <p className="text-xs md:text-base">Loading events...</p>
-                </div>
-              ) : (
-                <div className="space-y-2 md:space-y-4">
-                  {events.length === 0 ? (
-                    <p className="text-center text-gray-500 py-2 md:py-4 text-xs md:text-base">
-                      No events found for selected date
-                    </p>
-                  ) : (
-                    events.map((event) => (
-                      <div
-                        key={event.id}
-                        className="p-2 md:p-4 border rounded-lg bg-white hover:bg-gray-50 text-xs md:text-base"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="font-medium text-xs md:text-base">{event.title}</h3>
-                            <p className="text-xs md:text-sm text-gray-500 mt-1">
-                              {formatDate(event.date)}
-                            </p>
-                            <p className="mt-2 text-xs md:text-base">{event.message}</p>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleEdit(event)}
-                              className="h-8 px-2"
-                              disabled={loading}
-                            >
-                              {loadingAction === 'updating' && editingEventId === event.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <>
-                                  <Pencil className="h-4 w-4 mr-1" />
-                                </>
-                              )}
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteClick(event.id, event.title)}
-                              className="h-8 px-2"
-                              disabled={loading}
-                            >
-                              {loadingAction === 'deleting' ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <>
-                                  <Trash2 className="h-4 w-4 mr-1" />
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        </div>
+          {loading && !currentEvent ? (
+            <div className="text-center py-4 md:py-8">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+              <p className="text-xs md:text-base">Loading event...</p>
+            </div>
+          ) : (
+            <>
+              <h2 className="text-base md:text-xl font-semibold mb-4">
+                {!currentEvent
+                  ? "No event found for selected date"
+                  : `Event for ${selectedDate ? formatDate(selectedDate!) : "selected date"}`}
+              </h2>
+              
+              {currentEvent && (
+                <Card className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <CardTitle className="text-lg md:text-xl">{currentEvent.title}</CardTitle>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleEdit(currentEvent)}
+                          className="h-8 px-2"
+                          disabled={loading}
+                        >
+                          {loadingAction === 'updating' && editingEventId === currentEvent.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Pencil className="h-4 w-4 mr-1" />
+                              Edit
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteClick(currentEvent.id, currentEvent.title)}
+                          className="h-8 px-2"
+                          disabled={loading}
+                        >
+                          {loadingAction === 'deleting' ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </>
+                          )}
+                        </Button>
                       </div>
-                    ))
-                  )}
-                </div>
+                    </div>
+                    <CardDescription className="text-sm">
+                      {formatDate(currentEvent.date)}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-base text-gray-600 whitespace-pre-wrap">
+                      {currentEvent.message}
+                    </p>
+                  </CardContent>
+                </Card>
               )}
-            </CardContent>
-          </Card>
+            </>
+          )}
         </div>
 
-        {/* Delete Confirmation Dialog */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
