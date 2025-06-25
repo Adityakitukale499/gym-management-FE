@@ -319,7 +319,7 @@ export default function AddMemberPage() {
   const sendWelcomeWhatsApp = async (phone: string, name: string) => {
     try {
       const welcomeMessage = `Hey ${name}! 👋 Welcome to the Royal Gym family in Mauda! 🏋️‍♂️ We're thrilled to have you with us. Let's crush those fitness goals together. 💪 If you need anything, we're just a message away! 🔥`;
-      const response = await fetch("http://165.232.176.49:3001/send-whatsapp", {
+      const response = await fetch("http://localhost:3001/send-whatsapp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

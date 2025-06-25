@@ -38,14 +38,15 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <h1>this is test</h1>
+    // <QueryClientProvider client={queryClient}>
+    //   <AuthProvider>
+    //     <TooltipProvider>
+    //       <Toaster />
+    //       <Router />
+    //     </TooltipProvider>
+    //   </AuthProvider>
+    // </QueryClientProvider>
   );
 }
 
